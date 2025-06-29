@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, AppProvider } from './context';
 import './styles/main.scss';
+import './App.css';
 
 // Components
 import { PrivateRoute, Navigation } from './components';
@@ -62,6 +63,51 @@ class ErrorBoundary extends React.Component<
 const App: React.FC = () => {
   console.log('App component rendering');
   
+  // Force mobile scrolling to work
+  useEffect(() => {
+    const enableMobileScrolling = () => {
+      // Set CSS properties to ensure scrolling works
+      document.documentElement.style.overflowY = 'auto';
+      (document.documentElement.style as any).webkitOverflowScrolling = 'touch';
+      document.body.style.overflowY = 'auto';
+      (document.body.style as any).webkitOverflowScrolling = 'touch';
+      
+      // Force touch scrolling on mobile
+      if (window.innerWidth <= 768) {
+        document.documentElement.style.touchAction = 'pan-y';
+        document.body.style.touchAction = 'pan-y';
+        
+        // Add touch event listeners to ensure scrolling works
+        const handleTouchStart = (e: TouchEvent) => {
+          // Allow default touch behavior for scrolling
+          e.stopPropagation();
+        };
+        
+        const handleTouchMove = (e: TouchEvent) => {
+          // Allow default touch behavior for scrolling
+          e.stopPropagation();
+        };
+        
+        document.addEventListener('touchstart', handleTouchStart, { passive: true });
+        document.addEventListener('touchmove', handleTouchMove, { passive: true });
+        
+        return () => {
+          document.removeEventListener('touchstart', handleTouchStart);
+          document.removeEventListener('touchmove', handleTouchMove);
+        };
+      }
+    };
+    
+    enableMobileScrolling();
+    
+    // Re-enable on resize
+    window.addEventListener('resize', enableMobileScrolling);
+    
+    return () => {
+      window.removeEventListener('resize', enableMobileScrolling);
+    };
+  }, []);
+
   return (
     <ErrorBoundary>
       <Router>

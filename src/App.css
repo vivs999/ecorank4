@@ -3,18 +3,36 @@
   overflow-x: hidden;
   min-height: 100vh;
   position: relative;
+  /* Enable scrolling everywhere */
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  height: 100%;
+  /* Allow touch scrolling anywhere */
+  touch-action: pan-y;
 }
 
 /* Mobile optimizations for App component */
 @media (max-width: 768px) {
   .App {
     /* Ensure proper mobile scrolling */
-    -webkit-overflow-scrolling: touch;
-    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
     /* Prevent horizontal scroll */
     max-width: 100vw;
     /* Better touch handling */
-    touch-action: manipulation;
+    touch-action: pan-y;
+    /* Force full height and scrolling */
+    height: 100vh;
+    min-height: 100vh;
+    /* Ensure scrolling works everywhere */
+    position: relative;
+  }
+  
+  /* Make all child elements scrollable */
+  .App > * {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
