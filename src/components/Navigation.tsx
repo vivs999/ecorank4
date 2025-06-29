@@ -43,15 +43,11 @@ export const Navigation: React.FC = () => {
       </Link>
       <Link to="/demo" className={`mobile-nav-item ${isActive('/demo') ? 'active' : ''}`}>
         <FontAwesomeIcon icon={faPlay} />
-        <span>Demo</span>
+        <span>Challenges</span>
       </Link>
       <Link to="/crew/join" className={`mobile-nav-item ${isActive('/crew/join') ? 'active' : ''}`}>
         <FontAwesomeIcon icon={faUsers} />
         <span>Join Crew</span>
-      </Link>
-      <Link to="/challenges" className={`mobile-nav-item ${isActive('/challenges') ? 'active' : ''}`}>
-        <FontAwesomeIcon icon={faLeaf} />
-        <span>Challenges</span>
       </Link>
       <Link to="/leaderboard" className={`mobile-nav-item ${isActive('/leaderboard') ? 'active' : ''}`}>
         <FontAwesomeIcon icon={faTrophy} />
@@ -86,16 +82,13 @@ export const Navigation: React.FC = () => {
                 <Link to={homeLink} className={`nav-link${isActive(homeLink) ? ' active' : ''}`}>Home</Link>
               </li>
               <li className="nav-item">
-                <Link to="/demo" className={`nav-link${isActive('/demo') ? ' active' : ''}`}>Demo Mode</Link>
+                <Link to="/demo" className={`nav-link${isActive('/demo') ? ' active' : ''}`}>Challenges</Link>
               </li>
               <li className="nav-item">
                 <Link to="/leaderboard" className={`nav-link${isActive('/leaderboard') ? ' active' : ''}`}>Leaderboard</Link>
               </li>
               <li className="nav-item">
                 <Link to="/crew/join" className={`nav-link${isActive('/crew/join') ? ' active' : ''}`}>Join Crew</Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/challenges" className={`nav-link${isActive('/challenges') ? ' active' : ''}`}>Challenges</Link>
               </li>
             </ul>
             <div className="d-flex align-items-center ms-auto">

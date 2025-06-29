@@ -15,7 +15,7 @@ import {
   faTimes
 } from '@fortawesome/free-solid-svg-icons';
 
-interface DemoChallenge {
+interface Challenge {
   id: string;
   title: string;
   description: string;
@@ -24,12 +24,12 @@ interface DemoChallenge {
   route: string;
 }
 
-const DemoMode: React.FC = () => {
+const Challenges: React.FC = () => {
   const navigate = useNavigate();
   const [currentChallengeIndex, setCurrentChallengeIndex] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const demoChallenges: DemoChallenge[] = [
+  const challenges: Challenge[] = [
     {
       id: 'carbon-footprint',
       title: 'Carbon Footprint Calculator',
@@ -64,17 +64,17 @@ const DemoMode: React.FC = () => {
     }
   ];
 
-  const currentChallenge = demoChallenges[currentChallengeIndex];
+  const currentChallenge = challenges[currentChallengeIndex];
 
   const nextChallenge = () => {
     setCurrentChallengeIndex((prev) => 
-      prev === demoChallenges.length - 1 ? 0 : prev + 1
+      prev === challenges.length - 1 ? 0 : prev + 1
     );
   };
 
   const prevChallenge = () => {
     setCurrentChallengeIndex((prev) => 
-      prev === 0 ? demoChallenges.length - 1 : prev - 1
+      prev === 0 ? challenges.length - 1 : prev - 1
     );
   };
 
@@ -105,14 +105,14 @@ const DemoMode: React.FC = () => {
         <div className={`col-md-3 bg-dark text-white p-3 ${sidebarOpen ? 'show' : ''}`}>
           <div className="d-flex flex-column h-100">
             <div className="mb-3">
-              <h4 className="text-eco mb-1">EcoRank Demo</h4>
+              <h4 className="text-eco mb-1">EcoRank Challenges</h4>
               <p className="text-muted small">Interactive Challenge Showcase</p>
             </div>
 
             <div className="flex-grow-1">
               <h6 className="mb-2">Available Challenges</h6>
               <div className="list-group list-group-flush">
-                {demoChallenges.map((challenge, index) => (
+                {challenges.map((challenge, index) => (
                   <button
                     key={challenge.id}
                     className={`list-group-item list-group-item-action d-flex align-items-center py-2 ${
@@ -176,7 +176,7 @@ const DemoMode: React.FC = () => {
             <div className="text-center">
               <h4 className="mb-1">{currentChallenge.title}</h4>
               <p className="text-muted mb-0 small">
-                Challenge {currentChallengeIndex + 1} of {demoChallenges.length}
+                Challenge {currentChallengeIndex + 1} of {challenges.length}
               </p>
             </div>
 
@@ -209,24 +209,44 @@ const DemoMode: React.FC = () => {
                 <div className="col-md-4">
                   <div className="text-center">
                     <div className="demo-stat">
-                      <h4 className="text-eco">85%</h4>
-                      <p className="text-muted small">Completion Rate</p>
+                      <h4 className="text-eco">
+                        {currentChallenge.type === 'carbon' ? '4' : 
+                         currentChallenge.type === 'food' ? '3' :
+                         currentChallenge.type === 'waste' ? '5' :
+                         currentChallenge.type === 'water' ? '2' : '0'}
+                      </h4>
+                      <p className="text-muted small">
+                        {currentChallenge.type === 'carbon' ? 'Transport Modes' : 
+                         currentChallenge.type === 'food' ? 'Food Categories' :
+                         currentChallenge.type === 'waste' ? 'Recycling Types' :
+                         currentChallenge.type === 'water' ? 'Conservation Tips' : 'Features'}
+                      </p>
                     </div>
                   </div>
                 </div>
                 <div className="col-md-4">
                   <div className="text-center">
                     <div className="demo-stat">
-                      <h4 className="text-eco">1,247</h4>
-                      <p className="text-muted small">Active Users</p>
+                      <h4 className="text-eco">
+                        {currentChallenge.type === 'carbon' ? 'Transport' : 
+                         currentChallenge.type === 'food' ? 'Diet' :
+                         currentChallenge.type === 'waste' ? 'Recycling' :
+                         currentChallenge.type === 'water' ? 'Conservation' : 'Type'}
+                      </h4>
+                      <p className="text-muted small">Challenge Focus</p>
                     </div>
                   </div>
                 </div>
                 <div className="col-md-4">
                   <div className="text-center">
                     <div className="demo-stat">
-                      <h4 className="text-eco">4.8★</h4>
-                      <p className="text-muted small">User Rating</p>
+                      <h4 className="text-eco">
+                        {currentChallenge.type === 'carbon' ? 'Daily' : 
+                         currentChallenge.type === 'food' ? 'Per Meal' :
+                         currentChallenge.type === 'waste' ? 'Weekly' :
+                         currentChallenge.type === 'water' ? 'Per Shower' : 'Frequency'}
+                      </h4>
+                      <p className="text-muted small">Tracking Frequency</p>
                     </div>
                   </div>
                 </div>
@@ -280,4 +300,4 @@ const DemoMode: React.FC = () => {
   );
 };
 
-export default DemoMode; 
+export default Challenges; 

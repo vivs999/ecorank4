@@ -3,7 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrophy, faUsers, faLeaf, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { 
+  faTrophy, 
+  faUsers, 
+  faLeaf, 
+  faPlus,
+  faRecycle,
+  faShower,
+  faUtensils
+} from '@fortawesome/free-solid-svg-icons';
 import { Challenge, Crew } from '../types';
 
 const Dashboard: React.FC = () => {
@@ -178,40 +186,69 @@ const Dashboard: React.FC = () => {
                 </div>
               )}
 
-              <h4 className="mb-3 mt-4">Active Challenges</h4>
-              {challenges.length === 0 ? (
-                <div className="alert alert-info">
-                  <h5>No active challenges</h5>
-                  <p className="mb-2">Check back later for new environmental challenges, or create one if you're a crew manager!</p>
-                  <button
-                    className="btn btn-outline-primary"
-                    onClick={() => navigate('/challenges/1')}
-                  >
-                    Browse Available Challenges
-                  </button>
-                </div>
-              ) : (
-                <div className="list-group">
-                  {challenges.map((challenge) => (
-                    <div key={challenge.id} className="list-group-item">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <div>
-                          <h5 className="mb-1">{challenge.title}</h5>
-                          <p className="text-muted mb-0">{challenge.description}</p>
-                        </div>
-                        <div className="text-end">
-                          <button
-                            className="btn btn-outline-primary"
-                            onClick={() => navigate(`/challenges/${challenge.id}`)}
-                          >
-                            View Details
-                          </button>
-                        </div>
-                      </div>
+              <h4 className="mb-3 mt-4">Available Challenges</h4>
+              <div className="row g-3">
+                <div className="col-md-6">
+                  <div className="card h-100">
+                    <div className="card-body text-center">
+                      <FontAwesomeIcon icon={faLeaf} className="text-success mb-3" size="2x" />
+                      <h5 className="card-title">Carbon Footprint</h5>
+                      <p className="card-text">Track your daily carbon emissions from transportation and lifestyle choices.</p>
+                      <button
+                        className="btn btn-success"
+                        onClick={() => navigate('/challenges/carbon-footprint')}
+                      >
+                        Start Challenge
+                      </button>
                     </div>
-                  ))}
+                  </div>
                 </div>
-              )}
+                <div className="col-md-6">
+                  <div className="card h-100">
+                    <div className="card-body text-center">
+                      <FontAwesomeIcon icon={faUtensils} className="text-warning mb-3" size="2x" />
+                      <h5 className="card-title">Food Carbon</h5>
+                      <p className="card-text">Calculate the carbon footprint of your meals and discover eco-friendly alternatives.</p>
+                      <button
+                        className="btn btn-warning"
+                        onClick={() => navigate('/challenges/food-carbon')}
+                      >
+                        Start Challenge
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-md-6">
+                  <div className="card h-100">
+                    <div className="card-body text-center">
+                      <FontAwesomeIcon icon={faRecycle} className="text-info mb-3" size="2x" />
+                      <h5 className="card-title">Recycling</h5>
+                      <p className="card-text">Document your recycling efforts and learn about proper waste sorting.</p>
+                      <button
+                        className="btn btn-info"
+                        onClick={() => navigate('/challenges/recycling')}
+                      >
+                        Start Challenge
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-md-6">
+                  <div className="card h-100">
+                    <div className="card-body text-center">
+                      <FontAwesomeIcon icon={faShower} className="text-primary mb-3" size="2x" />
+                      <h5 className="card-title">Water Conservation</h5>
+                      <p className="card-text">Time your showers and reduce water consumption with smart tracking.</p>
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => navigate('/challenges/shower-timer')}
+                      >
+                        Start Challenge
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

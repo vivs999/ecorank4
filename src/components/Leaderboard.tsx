@@ -116,8 +116,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   }
 
   return (
-    <div className="card shadow">
-      <div className="card-header bg-success text-white">
+    <div className="card shadow mt-4">
+      <div className="card-header bg-success text-white py-3">
         <h4 className="mb-0">{title}</h4>
       </div>
       <div className="card-body">
@@ -141,7 +141,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             <thead className="table-light">
               <tr>
                 <th 
-                  className="cursor-pointer"
+                  className="cursor-pointer py-3"
                   onClick={() => handleSort('position')}
                   style={{ cursor: 'pointer' }}
                 >
@@ -153,10 +153,10 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                     />
                   </div>
                 </th>
-                <th>User</th>
-                {showCrew && <th>Crew</th>}
+                <th className="py-3">User</th>
+                {showCrew && <th className="py-3">Crew</th>}
                 <th 
-                  className="cursor-pointer"
+                  className="cursor-pointer py-3"
                   onClick={() => handleSort('score')}
                   style={{ cursor: 'pointer' }}
                 >
@@ -168,13 +168,13 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                     />
                   </div>
                 </th>
-                {showAchievements && <th>Achievements</th>}
+                {showAchievements && <th className="py-3">Achievements</th>}
               </tr>
             </thead>
             <tbody>
               {filteredAndSortedEntries.map((entry) => (
                 <tr key={entry.userId} className="align-middle">
-                  <td>
+                  <td className="py-3">
                     <div className="d-flex align-items-center">
                       {entry.position <= 3 ? (
                         <div className={`me-2 ${getPositionColor(entry.position)}`}>
@@ -186,7 +186,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                       </span>
                     </div>
                   </td>
-                  <td>
+                  <td className="py-3">
                     <div className="d-flex align-items-center">
                       <div className="bg-success rounded-circle d-flex align-items-center justify-content-center me-3" 
                            style={{ width: '40px', height: '40px' }}>
@@ -203,19 +203,19 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                     </div>
                   </td>
                   {showCrew && (
-                    <td>
+                    <td className="py-3">
                       <span className="badge bg-light text-dark">
                         {entry.crewName || '-'}
                       </span>
                     </td>
                   )}
-                  <td>
+                  <td className="py-3">
                     <span className="fw-bold text-success fs-5">
                       {formatScore(entry.score)}
                     </span>
                   </td>
                   {showAchievements && (
-                    <td>
+                    <td className="py-3">
                       <div className="d-flex flex-wrap gap-1">
                         {entry.achievements?.slice(0, 3).map((achievement, index) => (
                           <span key={index} className="badge bg-warning text-dark">

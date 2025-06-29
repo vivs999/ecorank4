@@ -2,7 +2,7 @@
 export { default as Home } from './Home';
 export { default as Dashboard } from './Dashboard';
 export { default as Leaderboard } from './Leaderboard';
-export { default as DemoMode } from './DemoMode';
+export { default as Challenges } from './DemoMode';
 export { default as Login } from './auth/Login';
 export { default as Register } from './auth/Register';
 export { default as CreateCrew } from './crew/CreateCrew';

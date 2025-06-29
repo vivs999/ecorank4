@@ -24,7 +24,7 @@ import {
   RecyclingChallenge,
   ShowerTimer,
   Transportation,
-  DemoMode
+  Challenges
 } from './pages';
 
 // Error Boundary Component
@@ -122,7 +122,7 @@ const App: React.FC = () => {
                     <Route path="/" element={<Home />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
-                    <Route path="/demo" element={<DemoMode />} />
+                    <Route path="/demo" element={<Challenges />} />
                     
                     {/* Protected Routes */}
                     <Route path="/dashboard" element={<PrivateRoute element={<Dashboard />} />} />

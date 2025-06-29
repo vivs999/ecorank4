@@ -23,7 +23,7 @@ const LeaderboardPage: React.FC = () => {
       <div className="row justify-content-center">
         <div className="col-12 col-lg-10">
           <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
-            <h1 className="h2 mb-3 mb-md-0">Leaderboard</h1>
+            <h1 className="h2 mb-3 mb-md-0" style={{ marginTop: '1rem' }}>Leaderboard</h1>
             <div className="d-flex gap-2">
               <div className="btn-group w-100 w-md-auto" role="group">
                 <button
