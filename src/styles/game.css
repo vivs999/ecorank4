@@ -1,0 +1,513 @@
+/* Game Theme Colors */
+:root {
+  --primary: #4CAF50;
+  --secondary: #2196F3;
+  --accent: #FFC107;
+  --success: #8BC34A;
+  --warning: #FF9800;
+  --danger: #F44336;
+  --dark: #2C3E50;
+  --light: #ECF0F1;
+  --gradient-primary: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  --gradient-secondary: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+  --gradient-accent: linear-gradient(135deg, #FFC107 0%, #FFA000 100%);
+}
+
+/* Global Game Styles */
+body {
+  background: var(--light);
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Animated Background */
+.game-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(76, 175, 80, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(33, 150, 243, 0.1) 0%, transparent 50%);
+  animation: backgroundPulse 15s ease-in-out infinite;
+}
+
+@keyframes backgroundPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* Game Card Styles */
+.game-card {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+.game-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+}
+
+.game-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 5px;
+  background: var(--gradient-primary);
+}
+
+/* Challenge Cards */
+.challenge-card {
+  background: white;
+  border-radius: 15px;
+  padding: 20px;
+  margin: 15px 0;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.challenge-card.active {
+  border-color: var(--primary);
+  animation: pulse 2s infinite;
+}
+
+.challenge-card.completed {
+  border-color: var(--success);
+  opacity: 0.8;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+}
+
+/* Points Display */
+.points-display {
+  background: var(--gradient-primary);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  animation: scorePop 0.5s ease;
+}
+
+@keyframes scorePop {
+  0% { transform: scale(0.8); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* Leaderboard Styles */
+.leaderboard-card {
+  background: white;
+  border-radius: 15px;
+  padding: 20px;
+  margin: 15px 0;
+}
+
+.leaderboard-entry {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-radius: 10px;
+  margin: 5px 0;
+  transition: all 0.3s ease;
+}
+
+.leaderboard-entry:hover {
+  background: var(--light);
+  transform: translateX(5px);
+}
+
+.leaderboard-position {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  margin-right: 15px;
+}
+
+.position-1 { background: var(--gradient-accent); color: white; }
+.position-2 { background: var(--gradient-secondary); color: white; }
+.position-3 { background: var(--gradient-primary); color: white; }
+
+/* Progress Bars */
+.progress-bar {
+  height: 10px;
+  background: var(--light);
+  border-radius: 5px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--gradient-primary);
+  transition: width 0.5s ease;
+  position: relative;
+}
+
+.progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.1) 0%,
+    rgba(255,255,255,0.2) 50%,
+    rgba(255,255,255,0.1) 100%
+  );
+  animation: progressShine 2s infinite;
+}
+
+@keyframes progressShine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Game Buttons */
+.game-button {
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 25px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.game-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+}
+
+.game-button:active {
+  transform: translateY(0);
+}
+
+.game-button::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: rgba(255,255,255,0.1);
+  transform: rotate(45deg);
+  animation: buttonShine 3s infinite;
+}
+
+@keyframes buttonShine {
+  0% { transform: translateX(-100%) rotate(45deg); }
+  100% { transform: translateX(100%) rotate(45deg); }
+}
+
+/* Achievement Badges */
+.achievement-badge {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--gradient-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 10px;
+  position: relative;
+  animation: badgeFloat 3s ease-in-out infinite;
+}
+
+@keyframes badgeFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Level Up Animation */
+.level-up {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--gradient-accent);
+  color: white;
+  padding: 20px 40px;
+  border-radius: 15px;
+  font-size: 24px;
+  font-weight: bold;
+  animation: levelUp 1s ease-out;
+  z-index: 1000;
+}
+
+@keyframes levelUp {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+/* Mobile App-like Styles */
+@media (max-width: 768px) {
+  /* Prevent pull-to-refresh and overscroll */
+  html, body {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* Main content area with native-like scrolling */
+  .container {
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 70px; /* Space for bottom nav */
+  }
+
+  /* Bottom Navigation Bar */
+  .mobile-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+  }
+
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--dark);
+    text-decoration: none;
+    font-size: 12px;
+    padding: 5px;
+  }
+
+  .mobile-nav-item.active {
+    color: var(--primary);
+  }
+
+  .mobile-nav-item i {
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+
+  /* Mobile Card Styles */
+  .game-card {
+    margin: 10px;
+    border-radius: 12px;
+  }
+
+  /* Mobile Points Display */
+  .points-display {
+    font-size: 14px;
+    padding: 8px 16px;
+  }
+
+  /* Mobile Leaderboard */
+  .leaderboard-entry {
+    flex-direction: row;
+    padding: 12px;
+    margin: 8px 0;
+  }
+
+  .leaderboard-position {
+    margin: 0 12px 0 0;
+  }
+
+  /* Mobile Buttons */
+  .game-button {
+    padding: 12px 20px;
+    font-size: 16px;
+    width: 100%;
+    margin: 5px 0;
+  }
+
+  /* Mobile Challenge Cards */
+  .challenge-card {
+    margin: 10px;
+    padding: 15px;
+  }
+
+  /* Mobile Progress Bars */
+  .progress-bar {
+    height: 8px;
+  }
+
+  /* Mobile Achievement Badges */
+  .achievement-badge {
+    width: 50px;
+    height: 50px;
+  }
+
+  /* Mobile Table Styles */
+  .table {
+    font-size: 14px;
+  }
+
+  .table td, .table th {
+    padding: 8px;
+  }
+
+  /* Mobile Form Elements */
+  input, select, textarea {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+    padding: 12px;
+    border-radius: 8px;
+  }
+
+  /* Mobile Modal Styles */
+  .modal-content {
+    border-radius: 12px;
+    margin: 10px;
+  }
+
+  /* Mobile Loading States */
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* Mobile Touch Feedback */
+  .touch-feedback {
+    position: relative;
+  }
+
+  .touch-feedback::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.1);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .touch-feedback:active::after {
+    opacity: 1;
+  }
+
+  /* Mobile Pull-to-Refresh Animation */
+  .pull-to-refresh {
+    position: absolute;
+    top: -50px;
+    left: 0;
+    right: 0;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    font-size: 14px;
+    transition: transform 0.3s;
+  }
+
+  .pull-to-refresh.pulling {
+    transform: translateY(50px);
+  }
+
+  /* Mobile Swipe Actions */
+  .swipe-action {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .swipe-action-content {
+    position: relative;
+    z-index: 1;
+    background: white;
+  }
+
+  .swipe-action-buttons {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: stretch;
+  }
+
+  .swipe-action-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 20px;
+    color: white;
+    font-weight: bold;
+  }
+
+  /* Mobile Safe Areas */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Mobile Gesture Hints */
+  .gesture-hint {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    animation: fadeInOut 2s ease-in-out;
+  }
+
+  @keyframes fadeInOut {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .game-card {
+    margin: 10px;
+  }
+  
+  .points-display {
+    font-size: 14px;
+    padding: 8px 16px;
+  }
+  
+  .leaderboard-entry {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .leaderboard-position {
+    margin: 0 0 10px 0;
+  }
+} 

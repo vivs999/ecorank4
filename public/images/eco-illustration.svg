@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="600" height="400" viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .leaf {
+      fill: #2e7d32;
+    }
+    .leaf-light {
+      fill: #81c784;
+    }
+    .ground {
+      fill: #a5d6a7;
+    }
+    .eco-text {
+      font-family: Arial, sans-serif;
+      font-size: 48px;
+      font-weight: bold;
+      fill: #1b5e20;
+    }
+    .rank-text {
+      font-family: Arial, sans-serif;
+      font-size: 48px;
+      font-weight: bold;
+      fill: #81c784;
+    }
+  </style>
+  
+  <!-- Background -->
+  <rect width="600" height="400" fill="#f1f8e9" />
+  
+  <!-- Ground -->
+  <path class="ground" d="M0,350 C150,320 300,370 450,330 C525,310 600,350 600,350 L600,400 L0,400 Z" />
+  
+  <!-- Tree Trunk -->
+  <rect x="280" y="250" width="40" height="100" fill="#795548" />
+  
+  <!-- Leaves -->
+  <circle class="leaf" cx="300" cy="200" r="80" />
+  <circle class="leaf-light" cx="250" cy="175" r="40" />
+  <circle class="leaf-light" cx="350" cy="175" r="30" />
+  <circle class="leaf-light" cx="300" cy="150" r="35" />
+  
+  <!-- Sun -->
+  <circle cx="100" cy="100" r="50" fill="#ffeb3b" />
+  <circle cx="100" cy="100" r="40" fill="#fff176" />
+  
+  <!-- Text -->
+  <text x="150" y="100" class="eco-text">Eco</text>
+  <text x="250" y="100" class="rank-text">Rank</text>
+  
+  <!-- Recycling Symbols -->
+  <g transform="translate(450, 250) scale(0.6)">
+    <path d="M75,40 L100,0 L125,40 Z" fill="#81c784" />
+    <path d="M75,40 L50,80 L100,80 Z" fill="#2e7d32" />
+    <path d="M125,40 L100,80 L150,80 Z" fill="#1b5e20" />
+    <circle cx="100" cy="40" r="30" fill="#f1f8e9" />
+  </g>
+</svg> 
