@@ -8,8 +8,8 @@ import { Challenge, Crew } from '../types';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { getUserCrews, getActiveChallenges } = useApp();
-  const { currentUser, userProfile } = useAuth();
+  const { getUserCrews, getActiveChallenges, userProfile } = useApp();
+  const { currentUser } = useAuth();
   const [crews, setCrews] = useState<Crew[]>([]);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);

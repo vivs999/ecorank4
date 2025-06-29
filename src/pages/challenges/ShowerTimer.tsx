@@ -244,7 +244,7 @@ const ShowerTimer: React.FC = () => {
         crewId: '',
         date: lastEntry.date,
         duration: lastEntry.duration,
-        score: calculateScore(lastEntry)
+        score: calculateTotalScore()
       };
       
       await submitShowerTimer(submission);

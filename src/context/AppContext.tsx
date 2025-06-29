@@ -194,33 +194,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (userDoc.exists()) {
         const data = userDoc.data();
         
-        // Recalculate user stats from all submission collections
-        const [carbonFootprints, foodCarbon, recycling, showerTimers] = await Promise.all([
-          getDocs(collection(db, 'carbonFootprints')).catch(() => ({ docs: [] })),
-          getDocs(collection(db, 'foodCarbon')).catch(() => ({ docs: [] })),
-          getDocs(collection(db, 'recycling')).catch(() => ({ docs: [] })),
-          getDocs(collection(db, 'showerTimers')).catch(() => ({ docs: [] }))
-        ]);
+        // Use the submissionsCount directly from the user document
+        // instead of recalculating from all collections
+        const submissionsCount = data.submissionsCount || 0;
+        const totalScore = data.totalScore || 0;
+        const bestScore = data.bestScore || 0;
+        const lastSubmission = data.lastSubmission?.toDate() || null;
         
-        let totalScore = 0;
-        let submissionsCount = 0;
-        let bestScore = 0;
-        let lastSubmission: Date | null = null;
-        
-        // Calculate stats from all submissions
-        [...carbonFootprints.docs, ...foodCarbon.docs, ...recycling.docs, ...showerTimers.docs]
-          .filter(doc => doc.data().userId === userId)
-          .forEach(doc => {
-            const submissionData = doc.data();
-            totalScore += submissionData.score || 0;
-            submissionsCount += 1;
-            if (submissionData.score > bestScore) {
-              bestScore = submissionData.score;
-            }
-            if (submissionData.createdAt && (!lastSubmission || submissionData.createdAt.toDate() > lastSubmission)) {
-              lastSubmission = submissionData.createdAt.toDate();
-            }
-          });
+        console.log('User profile data from Firestore:', {
+          submissionsCount,
+          totalScore,
+          bestScore,
+          lastSubmission
+        });
         
         const averageScore = submissionsCount > 0 ? totalScore / submissionsCount : 0;
         const level = Math.floor(totalScore / 100) + 1;
@@ -242,17 +228,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           bestScore,
           lastSubmission,
           createdAt: data.createdAt?.toDate() || new Date()
-        });
-        
-        // Update the user document with recalculated stats to keep everything in sync
-        await updateDoc(doc(db, 'users', userId), {
-          totalScore,
-          level,
-          levelProgress,
-          submissionsCount,
-          averageScore,
-          bestScore,
-          lastSubmission
         });
       } else {
         // User document doesn't exist, create it
@@ -359,244 +334,420 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const submitCarbonFootprint = async (submission: CarbonFootprintSubmission) => {
     try {
       console.log('=== SUBMIT CARBON FOOTPRINT START ===');
-      console.log('Original submission:', submission);
-      console.log('Current user:', currentUser);
-      console.log('User profile:', userProfile);
-      console.log('User crew:', userCrew);
+      console.log('Submission:', submission);
+      console.log('Current user:', currentUser?.uid);
+      console.log('Current userProfile:', userProfile);
       
-      const displayName = currentUser?.displayName || userProfile?.displayName || 'Unknown User';
-      const userId = currentUser?.uid || '';
-      const crewId = userCrew?.id || submission.crewId || '';
-      const crewName = userCrew?.name || (submission as any).crewName || '';
-      
-      console.log('Processed values:', {
-        displayName,
-        userId,
-        crewId,
-        crewName
-      });
-      
-      if (!userId) {
-        console.error('ERROR: No userId available');
+      if (!currentUser) {
         throw new Error('User not authenticated');
       }
-      
-      const finalSubmission = {
+
+      // Add user info to submission
+      const submissionWithUser = {
         ...submission,
-        userId,
-        displayName,
-        crewId,
-        crewName,
-        createdAt: Timestamp.now()
+        userId: currentUser.uid,
+        displayName: currentUser.displayName || 'Unknown User',
+        crewName: userProfile?.crewId || '',
+        timestamp: Timestamp.now()
       };
+
+      console.log('Submission with user info:', submissionWithUser);
+
+      // Save to Firestore
+      const docRef = doc(collection(db, 'carbonFootprints'));
+      await setDoc(docRef, submissionWithUser);
+      console.log('Carbon footprint saved to Firestore');
+
+      // Update user profile with new submission count and score
+      // Always update even if userProfile is null (fetch current data first)
+      const userRef = doc(db, 'users', currentUser.uid);
+      const userDoc = await getDoc(userRef);
       
-      console.log('Final submission to be saved:', finalSubmission);
-      
-      const submissionRef = doc(collection(db, 'carbonFootprints'));
-      await setDoc(submissionRef, finalSubmission);
-      console.log('Submission saved successfully');
-      
-      // Update user profile with new score and submission count
-      if (currentUser) {
-        console.log('Updating user profile...');
-        const userRef = doc(db, 'users', currentUser.uid);
-        const userDoc = await getDoc(userRef);
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          const newTotalScore = (userData.totalScore || 0) + (submission.score || 0);
-          const newSubmissionsCount = (userData.submissionsCount || 0) + 1;
-          
-          console.log('User profile update:', {
-            oldTotalScore: userData.totalScore,
-            newTotalScore,
-            oldSubmissionsCount: userData.submissionsCount,
-            newSubmissionsCount
-          });
-          
-          await updateDoc(userRef, {
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const currentSubmissionsCount = userData.submissionsCount || 0;
+        const currentTotalScore = userData.totalScore || 0;
+        const newSubmissionsCount = currentSubmissionsCount + 1;
+        const newTotalScore = currentTotalScore + submission.score;
+        
+        console.log('Updating user profile:', {
+          currentSubmissionsCount,
+          newSubmissionsCount,
+          currentTotalScore,
+          newTotalScore
+        });
+        
+        await updateDoc(userRef, {
+          totalScore: newTotalScore,
+          submissionsCount: newSubmissionsCount,
+          lastSubmission: new Date()
+        });
+        
+        // Update local state if userProfile exists
+        if (userProfile) {
+          const updatedProfile = {
+            ...userProfile,
             totalScore: newTotalScore,
             submissionsCount: newSubmissionsCount,
-            lastSubmission: Timestamp.now()
-          });
-          console.log('User profile updated successfully');
+            lastSubmission: new Date()
+          };
+          setUserProfile(updatedProfile);
+          console.log('Local userProfile updated:', updatedProfile);
         }
+        
+        console.log('User profile updated in Firestore with new submission count:', newSubmissionsCount);
+      } else {
+        console.log('User document does not exist, creating new profile');
+        const newUserProfile = {
+          id: currentUser.uid,
+          displayName: currentUser.displayName || 'Demo User',
+          email: currentUser.email || '',
+          crewId: '',
+          totalScore: submission.score,
+          level: 1,
+          levelProgress: 0,
+          achievements: [],
+          avatarUrl: '',
+          isCrewManager: false,
+          submissionsCount: 1,
+          averageScore: submission.score,
+          bestScore: submission.score,
+          lastSubmission: new Date(),
+          createdAt: new Date()
+        };
+        
+        await setDoc(userRef, newUserProfile);
+        setUserProfile(newUserProfile);
+        console.log('New user profile created with submission count: 1');
       }
+
+      // Wait a bit for Firestore to commit
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      console.log('Refreshing data...');
+      // Refresh data
       await refreshData();
       await refreshCrewData();
+      
       console.log('=== SUBMIT CARBON FOOTPRINT COMPLETE ===');
-    } catch (err) {
-      console.error('Error submitting carbon footprint:', err);
-      throw new Error('Failed to submit carbon footprint');
+    } catch (error) {
+      console.error('Error submitting carbon footprint:', error);
+      setError('Failed to submit carbon footprint');
+      throw error;
     }
   };
 
   const submitFoodCarbon = async (submission: FoodCarbonSubmission) => {
     try {
-      console.log('Submitting food carbon:', submission);
-      console.log('Current user display name:', currentUser?.displayName);
-      console.log('User profile display name:', userProfile?.displayName);
+      console.log('=== SUBMIT FOOD CARBON START ===');
+      console.log('Submission:', submission);
+      console.log('Current user:', currentUser?.uid);
+      console.log('Current userProfile:', userProfile);
       
-      const displayName = currentUser?.displayName || userProfile?.displayName || 'Unknown User';
-      const userId = currentUser?.uid || '';
-      console.log('Using display name:', displayName);
-      console.log('Using userId:', userId);
-      
-      if (!userId) {
-        console.error('ERROR: No userId available');
+      if (!currentUser) {
         throw new Error('User not authenticated');
       }
-      
-      const submissionRef = doc(collection(db, 'foodCarbon'));
-      await setDoc(submissionRef, {
+
+      // Add user info to submission
+      const submissionWithUser = {
         ...submission,
-        userId,
-        displayName,
-        crewId: userCrew?.id || submission.crewId || '',
-        crewName: userCrew?.name || (submission as any).crewName || '',
-        createdAt: Timestamp.now()
-      });
+        userId: currentUser.uid,
+        displayName: currentUser.displayName || 'Unknown User',
+        crewName: userProfile?.crewId || '',
+        timestamp: Timestamp.now()
+      };
+
+      console.log('Submission with user info:', submissionWithUser);
+
+      // Save to Firestore
+      const docRef = doc(collection(db, 'foodCarbon'));
+      await setDoc(docRef, submissionWithUser);
+      console.log('Food carbon saved to Firestore');
+
+      // Update user profile with new submission count and score
+      // Always update even if userProfile is null (fetch current data first)
+      const userRef = doc(db, 'users', currentUser.uid);
+      const userDoc = await getDoc(userRef);
       
-      console.log('Food carbon submission saved successfully');
-      
-      // Update user profile with new score and submission count
-      if (currentUser) {
-        const userRef = doc(db, 'users', currentUser.uid);
-        const userDoc = await getDoc(userRef);
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          const newTotalScore = (userData.totalScore || 0) + submission.score;
-          const newSubmissionsCount = (userData.submissionsCount || 0) + 1;
-          
-          await updateDoc(userRef, {
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const currentSubmissionsCount = userData.submissionsCount || 0;
+        const currentTotalScore = userData.totalScore || 0;
+        const newSubmissionsCount = currentSubmissionsCount + 1;
+        const newTotalScore = currentTotalScore + submission.score;
+        
+        console.log('Updating user profile:', {
+          currentSubmissionsCount,
+          newSubmissionsCount,
+          currentTotalScore,
+          newTotalScore
+        });
+        
+        await updateDoc(userRef, {
+          totalScore: newTotalScore,
+          submissionsCount: newSubmissionsCount,
+          lastSubmission: new Date()
+        });
+        
+        // Update local state if userProfile exists
+        if (userProfile) {
+          const updatedProfile = {
+            ...userProfile,
             totalScore: newTotalScore,
             submissionsCount: newSubmissionsCount,
-            lastSubmission: Timestamp.now()
-          });
-          console.log('User profile updated with new score:', newTotalScore);
+            lastSubmission: new Date()
+          };
+          setUserProfile(updatedProfile);
+          console.log('Local userProfile updated:', updatedProfile);
         }
+        
+        console.log('User profile updated in Firestore with new submission count:', newSubmissionsCount);
+      } else {
+        console.log('User document does not exist, creating new profile');
+        const newUserProfile = {
+          id: currentUser.uid,
+          displayName: currentUser.displayName || 'Demo User',
+          email: currentUser.email || '',
+          crewId: '',
+          totalScore: submission.score,
+          level: 1,
+          levelProgress: 0,
+          achievements: [],
+          avatarUrl: '',
+          isCrewManager: false,
+          submissionsCount: 1,
+          averageScore: submission.score,
+          bestScore: submission.score,
+          lastSubmission: new Date(),
+          createdAt: new Date()
+        };
+        
+        await setDoc(userRef, newUserProfile);
+        setUserProfile(newUserProfile);
+        console.log('New user profile created with submission count: 1');
       }
+
+      // Wait a bit for Firestore to commit
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      console.log('Refreshing data after food carbon submission...');
+      // Refresh data
       await refreshData();
       await refreshCrewData();
-      console.log('Data refresh completed');
-    } catch (err) {
-      console.error('Error submitting food carbon:', err);
-      throw new Error('Failed to submit food carbon');
+      
+      console.log('=== SUBMIT FOOD CARBON COMPLETE ===');
+    } catch (error) {
+      console.error('Error submitting food carbon:', error);
+      setError('Failed to submit food carbon');
+      throw error;
     }
   };
 
   const submitRecycling = async (submission: RecyclingSubmission) => {
     try {
-      console.log('Submitting recycling:', submission);
-      console.log('Current user display name:', currentUser?.displayName);
-      console.log('User profile display name:', userProfile?.displayName);
+      console.log('=== SUBMIT RECYCLING START ===');
+      console.log('Submission:', submission);
+      console.log('Current user:', currentUser?.uid);
+      console.log('Current userProfile:', userProfile);
       
-      const displayName = currentUser?.displayName || userProfile?.displayName || 'Unknown User';
-      const userId = currentUser?.uid || '';
-      console.log('Using display name:', displayName);
-      console.log('Using userId:', userId);
-      
-      if (!userId) {
-        console.error('ERROR: No userId available');
+      if (!currentUser) {
         throw new Error('User not authenticated');
       }
-      
-      const submissionRef = doc(collection(db, 'recycling'));
-      await setDoc(submissionRef, {
+
+      // Add user info to submission
+      const submissionWithUser = {
         ...submission,
-        userId,
-        displayName,
-        crewId: userCrew?.id || submission.crewId || '',
-        crewName: userCrew?.name || (submission as any).crewName || '',
-        createdAt: Timestamp.now()
-      });
+        userId: currentUser.uid,
+        displayName: currentUser.displayName || 'Unknown User',
+        crewName: userProfile?.crewId || '',
+        timestamp: Timestamp.now()
+      };
+
+      console.log('Submission with user info:', submissionWithUser);
+
+      // Save to Firestore
+      const docRef = doc(collection(db, 'recycling'));
+      await setDoc(docRef, submissionWithUser);
+      console.log('Recycling saved to Firestore');
+
+      // Update user profile with new submission count and score
+      // Always update even if userProfile is null (fetch current data first)
+      const userRef = doc(db, 'users', currentUser.uid);
+      const userDoc = await getDoc(userRef);
       
-      console.log('Recycling submission saved successfully');
-      
-      // Update user profile with new score and submission count
-      if (currentUser) {
-        const userRef = doc(db, 'users', currentUser.uid);
-        const userDoc = await getDoc(userRef);
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          const newTotalScore = (userData.totalScore || 0) + submission.score;
-          const newSubmissionsCount = (userData.submissionsCount || 0) + 1;
-          
-          await updateDoc(userRef, {
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const currentSubmissionsCount = userData.submissionsCount || 0;
+        const currentTotalScore = userData.totalScore || 0;
+        const newSubmissionsCount = currentSubmissionsCount + 1;
+        const newTotalScore = currentTotalScore + submission.score;
+        
+        console.log('Updating user profile:', {
+          currentSubmissionsCount,
+          newSubmissionsCount,
+          currentTotalScore,
+          newTotalScore
+        });
+        
+        await updateDoc(userRef, {
+          totalScore: newTotalScore,
+          submissionsCount: newSubmissionsCount,
+          lastSubmission: new Date()
+        });
+        
+        // Update local state if userProfile exists
+        if (userProfile) {
+          const updatedProfile = {
+            ...userProfile,
             totalScore: newTotalScore,
             submissionsCount: newSubmissionsCount,
-            lastSubmission: Timestamp.now()
-          });
-          console.log('User profile updated with new score:', newTotalScore);
+            lastSubmission: new Date()
+          };
+          setUserProfile(updatedProfile);
+          console.log('Local userProfile updated:', updatedProfile);
         }
+        
+        console.log('User profile updated in Firestore with new submission count:', newSubmissionsCount);
+      } else {
+        console.log('User document does not exist, creating new profile');
+        const newUserProfile = {
+          id: currentUser.uid,
+          displayName: currentUser.displayName || 'Demo User',
+          email: currentUser.email || '',
+          crewId: '',
+          totalScore: submission.score,
+          level: 1,
+          levelProgress: 0,
+          achievements: [],
+          avatarUrl: '',
+          isCrewManager: false,
+          submissionsCount: 1,
+          averageScore: submission.score,
+          bestScore: submission.score,
+          lastSubmission: new Date(),
+          createdAt: new Date()
+        };
+        
+        await setDoc(userRef, newUserProfile);
+        setUserProfile(newUserProfile);
+        console.log('New user profile created with submission count: 1');
       }
+
+      // Wait a bit for Firestore to commit
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      console.log('Refreshing data after recycling submission...');
+      // Refresh data
       await refreshData();
       await refreshCrewData();
-      console.log('Data refresh completed');
-    } catch (err) {
-      console.error('Error submitting recycling:', err);
-      throw new Error('Failed to submit recycling');
+      
+      console.log('=== SUBMIT RECYCLING COMPLETE ===');
+    } catch (error) {
+      console.error('Error submitting recycling:', error);
+      setError('Failed to submit recycling');
+      throw error;
     }
   };
 
   const submitShowerTimer = async (submission: ShowerTimerSubmission) => {
     try {
-      console.log('Submitting shower timer:', submission);
-      console.log('Current user display name:', currentUser?.displayName);
-      console.log('User profile display name:', userProfile?.displayName);
+      console.log('=== SUBMIT SHOWER TIMER START ===');
+      console.log('Submission:', submission);
+      console.log('Current user:', currentUser?.uid);
+      console.log('Current userProfile:', userProfile);
       
-      const displayName = currentUser?.displayName || userProfile?.displayName || 'Unknown User';
-      const userId = currentUser?.uid || '';
-      console.log('Using display name:', displayName);
-      console.log('Using userId:', userId);
-      
-      if (!userId) {
-        console.error('ERROR: No userId available');
+      if (!currentUser) {
         throw new Error('User not authenticated');
       }
-      
-      const submissionRef = doc(collection(db, 'showerTimers'));
-      await setDoc(submissionRef, {
+
+      // Add user info to submission
+      const submissionWithUser = {
         ...submission,
-        userId,
-        displayName,
-        crewId: userCrew?.id || submission.crewId || '',
-        crewName: userCrew?.name || (submission as any).crewName || '',
-        createdAt: Timestamp.now()
-      });
+        userId: currentUser.uid,
+        displayName: currentUser.displayName || 'Unknown User',
+        crewName: userProfile?.crewId || '',
+        timestamp: Timestamp.now()
+      };
+
+      console.log('Submission with user info:', submissionWithUser);
+
+      // Save to Firestore
+      const docRef = doc(collection(db, 'showerTimers'));
+      await setDoc(docRef, submissionWithUser);
+      console.log('Shower timer saved to Firestore');
+
+      // Update user profile with new submission count and score
+      // Always update even if userProfile is null (fetch current data first)
+      const userRef = doc(db, 'users', currentUser.uid);
+      const userDoc = await getDoc(userRef);
       
-      console.log('Shower timer submission saved successfully');
-      
-      // Update user profile with new score and submission count
-      if (currentUser) {
-        const userRef = doc(db, 'users', currentUser.uid);
-        const userDoc = await getDoc(userRef);
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          const newTotalScore = (userData.totalScore || 0) + submission.score;
-          const newSubmissionsCount = (userData.submissionsCount || 0) + 1;
-          
-          await updateDoc(userRef, {
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const currentSubmissionsCount = userData.submissionsCount || 0;
+        const currentTotalScore = userData.totalScore || 0;
+        const newSubmissionsCount = currentSubmissionsCount + 1;
+        const newTotalScore = currentTotalScore + submission.score;
+        
+        console.log('Updating user profile:', {
+          currentSubmissionsCount,
+          newSubmissionsCount,
+          currentTotalScore,
+          newTotalScore
+        });
+        
+        await updateDoc(userRef, {
+          totalScore: newTotalScore,
+          submissionsCount: newSubmissionsCount,
+          lastSubmission: new Date()
+        });
+        
+        // Update local state if userProfile exists
+        if (userProfile) {
+          const updatedProfile = {
+            ...userProfile,
             totalScore: newTotalScore,
             submissionsCount: newSubmissionsCount,
-            lastSubmission: Timestamp.now()
-          });
-          console.log('User profile updated with new score:', newTotalScore);
+            lastSubmission: new Date()
+          };
+          setUserProfile(updatedProfile);
+          console.log('Local userProfile updated:', updatedProfile);
         }
+        
+        console.log('User profile updated in Firestore with new submission count:', newSubmissionsCount);
+      } else {
+        console.log('User document does not exist, creating new profile');
+        const newUserProfile = {
+          id: currentUser.uid,
+          displayName: currentUser.displayName || 'Demo User',
+          email: currentUser.email || '',
+          crewId: '',
+          totalScore: submission.score,
+          level: 1,
+          levelProgress: 0,
+          achievements: [],
+          avatarUrl: '',
+          isCrewManager: false,
+          submissionsCount: 1,
+          averageScore: submission.score,
+          bestScore: submission.score,
+          lastSubmission: new Date(),
+          createdAt: new Date()
+        };
+        
+        await setDoc(userRef, newUserProfile);
+        setUserProfile(newUserProfile);
+        console.log('New user profile created with submission count: 1');
       }
+
+      // Wait a bit for Firestore to commit
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      console.log('Refreshing data after shower timer submission...');
+      // Refresh data
       await refreshData();
       await refreshCrewData();
-      console.log('Data refresh completed');
-    } catch (err) {
-      console.error('Error submitting shower timer:', err);
-      throw new Error('Failed to submit shower timer');
+      
+      console.log('=== SUBMIT SHOWER TIMER COMPLETE ===');
+    } catch (error) {
+      console.error('Error submitting shower timer:', error);
+      setError('Failed to submit shower timer');
+      throw error;
     }
   };
 
