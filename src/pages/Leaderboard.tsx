@@ -23,12 +23,12 @@ const LeaderboardPage: React.FC = () => {
   };
 
   return (
-    <div className="container-fluid py-4">
+    <div className="container-fluid leaderboard-container">
       <div className="row justify-content-center">
-        <div className="col-lg-10">
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <h1 className="h2 mb-0">Leaderboard</h1>
-            <div className="btn-group" role="group">
+        <div className="col-12 col-lg-10">
+          <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+            <h1 className="h2 mb-3 mb-md-0">Leaderboard</h1>
+            <div className="btn-group w-100 w-md-auto" role="group">
               <button
                 type="button"
                 className={`btn ${activeTab === 'current' ? 'btn-success' : 'btn-outline-success'}`}

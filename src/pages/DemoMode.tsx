@@ -10,7 +10,9 @@ import {
   faTrophy,
   faRecycle,
   faShower,
-  faUtensils
+  faUtensils,
+  faBars,
+  faTimes
 } from '@fortawesome/free-solid-svg-icons';
 
 interface DemoChallenge {
@@ -25,6 +27,7 @@ interface DemoChallenge {
 const DemoMode: React.FC = () => {
   const navigate = useNavigate();
   const [currentChallengeIndex, setCurrentChallengeIndex] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const demoChallenges: DemoChallenge[] = [
     {
@@ -83,11 +86,23 @@ const DemoMode: React.FC = () => {
     navigate('/dashboard');
   };
 
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
   return (
     <div className="container-fluid demo-mode">
+      {/* Mobile Menu Toggle */}
+      <button 
+        className="mobile-menu-toggle d-mobile-block d-md-none"
+        onClick={toggleSidebar}
+      >
+        <FontAwesomeIcon icon={sidebarOpen ? faTimes : faBars} />
+      </button>
+
       <div className="row min-vh-100">
         {/* Left Sidebar - Challenge Navigation */}
-        <div className="col-md-3 bg-dark text-white p-3">
+        <div className={`col-md-3 bg-dark text-white p-3 ${sidebarOpen ? 'show' : ''}`}>
           <div className="d-flex flex-column h-100">
             <div className="mb-3">
               <h4 className="text-eco mb-1">EcoRank Demo</h4>
@@ -103,7 +118,10 @@ const DemoMode: React.FC = () => {
                     className={`list-group-item list-group-item-action d-flex align-items-center py-2 ${
                       index === currentChallengeIndex ? 'active' : ''
                     }`}
-                    onClick={() => setCurrentChallengeIndex(index)}
+                    onClick={() => {
+                      setCurrentChallengeIndex(index);
+                      setSidebarOpen(false); // Close sidebar on mobile
+                    }}
                   >
                     <FontAwesomeIcon 
                       icon={challenge.icon} 
@@ -123,14 +141,20 @@ const DemoMode: React.FC = () => {
             <div className="mt-3">
               <button
                 className="btn btn-eco btn-sm w-100 mb-2"
-                onClick={goToDashboard}
+                onClick={() => {
+                  goToDashboard();
+                  setSidebarOpen(false); // Close sidebar on mobile
+                }}
               >
                 <FontAwesomeIcon icon={faUsers} className="me-1" />
                 View Dashboard
               </button>
               <button
                 className="btn btn-outline-light btn-sm w-100"
-                onClick={() => navigate('/')}
+                onClick={() => {
+                  navigate('/');
+                  setSidebarOpen(false); // Close sidebar on mobile
+                }}
               >
                 Back to Home
               </button>
