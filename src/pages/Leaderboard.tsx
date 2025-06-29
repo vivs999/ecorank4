@@ -49,7 +49,7 @@ const LeaderboardPage: React.FC = () => {
             title={activeTab === 'current' ? 'Current Challenge Rankings' : 'Overall Rankings'}
             isLoading={isLoading}
             error={error}
-            showCrew={true}
+            showCrew={false}
             showAchievements={true}
             onCreateSampleData={createSampleLeaderboardData}
           />
