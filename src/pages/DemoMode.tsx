@@ -87,31 +87,32 @@ const DemoMode: React.FC = () => {
     <div className="container-fluid demo-mode">
       <div className="row min-vh-100">
         {/* Left Sidebar - Challenge Navigation */}
-        <div className="col-md-4 bg-dark text-white p-4">
+        <div className="col-md-3 bg-dark text-white p-3">
           <div className="d-flex flex-column h-100">
-            <div className="mb-4">
-              <h2 className="text-eco mb-2">EcoRank Demo</h2>
-              <p className="text-muted">Interactive Challenge Showcase</p>
+            <div className="mb-3">
+              <h4 className="text-eco mb-1">EcoRank Demo</h4>
+              <p className="text-muted small">Interactive Challenge Showcase</p>
             </div>
 
             <div className="flex-grow-1">
-              <h5 className="mb-3">Available Challenges</h5>
+              <h6 className="mb-2">Available Challenges</h6>
               <div className="list-group list-group-flush">
                 {demoChallenges.map((challenge, index) => (
                   <button
                     key={challenge.id}
-                    className={`list-group-item list-group-item-action d-flex align-items-center ${
+                    className={`list-group-item list-group-item-action d-flex align-items-center py-2 ${
                       index === currentChallengeIndex ? 'active' : ''
                     }`}
                     onClick={() => setCurrentChallengeIndex(index)}
                   >
                     <FontAwesomeIcon 
                       icon={challenge.icon} 
-                      className="me-3" 
-                      size="lg"
+                      className="me-2" 
+                      size="sm"
                     />
                     <div className="text-start">
-                      <h6 className="mb-1">{challenge.title}</h6>
+                      <small className="fw-bold mb-0">{challenge.title}</small>
+                      <br />
                       <small className="text-muted">{challenge.type}</small>
                     </div>
                   </button>
@@ -119,16 +120,16 @@ const DemoMode: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-4">
+            <div className="mt-3">
               <button
-                className="btn btn-eco w-100 mb-2"
+                className="btn btn-eco btn-sm w-100 mb-2"
                 onClick={goToDashboard}
               >
-                <FontAwesomeIcon icon={faUsers} className="me-2" />
+                <FontAwesomeIcon icon={faUsers} className="me-1" />
                 View Dashboard
               </button>
               <button
-                className="btn btn-outline-light w-100"
+                className="btn btn-outline-light btn-sm w-100"
                 onClick={() => navigate('/')}
               >
                 Back to Home
@@ -138,70 +139,70 @@ const DemoMode: React.FC = () => {
         </div>
 
         {/* Main Content - Challenge Preview */}
-        <div className="col-md-8 bg-light p-5">
-          <div className="d-flex justify-content-between align-items-center mb-4">
+        <div className="col-md-9 bg-light p-4">
+          <div className="d-flex justify-content-between align-items-center mb-3">
             <button
-              className="btn btn-outline-secondary"
+              className="btn btn-outline-secondary btn-sm"
               onClick={prevChallenge}
             >
-              <FontAwesomeIcon icon={faChevronLeft} className="me-2" />
+              <FontAwesomeIcon icon={faChevronLeft} className="me-1" />
               Previous
             </button>
             
             <div className="text-center">
-              <h3 className="mb-1">{currentChallenge.title}</h3>
-              <p className="text-muted mb-0">
+              <h4 className="mb-1">{currentChallenge.title}</h4>
+              <p className="text-muted mb-0 small">
                 Challenge {currentChallengeIndex + 1} of {demoChallenges.length}
               </p>
             </div>
 
             <button
-              className="btn btn-outline-secondary"
+              className="btn btn-outline-secondary btn-sm"
               onClick={nextChallenge}
             >
               Next
-              <FontAwesomeIcon icon={faChevronRight} className="ms-2" />
+              <FontAwesomeIcon icon={faChevronRight} className="ms-1" />
             </button>
           </div>
 
           <div className="card shadow-lg">
-            <div className="card-body p-5">
-              <div className="text-center mb-4">
-                <div className="demo-icon-wrapper mb-3">
+            <div className="card-body p-4">
+              <div className="text-center mb-3">
+                <div className="demo-icon-wrapper mb-2">
                   <FontAwesomeIcon 
                     icon={currentChallenge.icon} 
-                    size="4x" 
+                    size="3x" 
                     className="text-eco"
                   />
                 </div>
-                <h4 className="mb-3">{currentChallenge.title}</h4>
-                <p className="lead text-muted mb-4">
+                <h5 className="mb-2">{currentChallenge.title}</h5>
+                <p className="text-muted mb-3">
                   {currentChallenge.description}
                 </p>
               </div>
 
-              <div className="row mb-4">
+              <div className="row mb-3">
                 <div className="col-md-4">
                   <div className="text-center">
                     <div className="demo-stat">
-                      <h3 className="text-eco">85%</h3>
-                      <p className="text-muted">Completion Rate</p>
+                      <h4 className="text-eco">85%</h4>
+                      <p className="text-muted small">Completion Rate</p>
                     </div>
                   </div>
                 </div>
                 <div className="col-md-4">
                   <div className="text-center">
                     <div className="demo-stat">
-                      <h3 className="text-eco">1,247</h3>
-                      <p className="text-muted">Active Users</p>
+                      <h4 className="text-eco">1,247</h4>
+                      <p className="text-muted small">Active Users</p>
                     </div>
                   </div>
                 </div>
                 <div className="col-md-4">
                   <div className="text-center">
                     <div className="demo-stat">
-                      <h3 className="text-eco">4.8★</h3>
-                      <p className="text-muted">User Rating</p>
+                      <h4 className="text-eco">4.8★</h4>
+                      <p className="text-muted small">User Rating</p>
                     </div>
                   </div>
                 </div>
@@ -209,7 +210,7 @@ const DemoMode: React.FC = () => {
 
               <div className="text-center">
                 <button
-                  className="btn btn-eco btn-lg"
+                  className="btn btn-eco"
                   onClick={goToChallenge}
                 >
                   <FontAwesomeIcon icon={faPlay} className="me-2" />
@@ -220,31 +221,31 @@ const DemoMode: React.FC = () => {
           </div>
 
           {/* Feature Highlights */}
-          <div className="row mt-5">
+          <div className="row mt-4">
             <div className="col-md-4">
               <div className="card h-100">
-                <div className="card-body text-center">
-                  <FontAwesomeIcon icon={faUsers} className="text-primary mb-3" size="2x" />
-                  <h5>Team Collaboration</h5>
-                  <p className="text-muted">Join crews and compete together on environmental challenges.</p>
+                <div className="card-body text-center p-3">
+                  <FontAwesomeIcon icon={faUsers} className="text-primary mb-2" size="lg" />
+                  <h6>Team Collaboration</h6>
+                  <p className="text-muted small">Join crews and compete together on environmental challenges.</p>
                 </div>
               </div>
             </div>
             <div className="col-md-4">
               <div className="card h-100">
-                <div className="card-body text-center">
-                  <FontAwesomeIcon icon={faTrophy} className="text-warning mb-3" size="2x" />
-                  <h5>Gamification</h5>
-                  <p className="text-muted">Earn points, badges, and climb leaderboards while saving the planet.</p>
+                <div className="card-body text-center p-3">
+                  <FontAwesomeIcon icon={faTrophy} className="text-warning mb-2" size="lg" />
+                  <h6>Gamification</h6>
+                  <p className="text-muted small">Earn points, badges, and climb leaderboards while saving the planet.</p>
                 </div>
               </div>
             </div>
             <div className="col-md-4">
               <div className="card h-100">
-                <div className="card-body text-center">
-                  <FontAwesomeIcon icon={faLeaf} className="text-success mb-3" size="2x" />
-                  <h5>Real Impact</h5>
-                  <p className="text-muted">Track your actual environmental impact with detailed analytics.</p>
+                <div className="card-body text-center p-3">
+                  <FontAwesomeIcon icon={faLeaf} className="text-success mb-2" size="lg" />
+                  <h6>Real Impact</h6>
+                  <p className="text-muted small">Track your actual environmental impact with detailed analytics.</p>
                 </div>
               </div>
             </div>

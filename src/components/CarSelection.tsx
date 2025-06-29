@@ -1,12 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { carEmissionsService } from '../services/carEmissions';
 import { VehicleMenu, VehicleData } from '../services/carEmissions';
+import { useApp } from '../context/AppContext';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCar, faSpinner, faCheckCircle, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 
 interface CarSelectionProps {
-  onSelect: (vehicleData: VehicleData) => void;
+  onSelect?: (vehicleData: VehicleData) => void;
+  autoNavigate?: boolean;
 }
 
-export const CarSelection: React.FC<CarSelectionProps> = ({ onSelect }) => {
+export const CarSelection: React.FC<CarSelectionProps> = ({ onSelect, autoNavigate = true }) => {
+  const navigate = useNavigate();
+  const { saveVehicle } = useApp();
   const [years, setYears] = useState<VehicleMenu[]>([]);
   const [makes, setMakes] = useState<VehicleMenu[]>([]);
   const [models, setModels] = useState<VehicleMenu[]>([]);
@@ -108,7 +115,19 @@ export const CarSelection: React.FC<CarSelectionProps> = ({ onSelect }) => {
         setLoading(true);
         try {
           const vehicleData = await carEmissionsService.getVehicleData(selectedOption);
-          onSelect(vehicleData);
+          
+          // Save vehicle data to global context
+          saveVehicle(vehicleData);
+          
+          // Call the onSelect callback if provided
+          if (onSelect) {
+            onSelect(vehicleData);
+          }
+          
+          // Auto-navigate to distance page if enabled
+          if (autoNavigate) {
+            navigate('/challenges/carbon-footprint');
+          }
         } catch (err) {
           setError('Failed to load vehicle data');
         } finally {
@@ -117,111 +136,146 @@ export const CarSelection: React.FC<CarSelectionProps> = ({ onSelect }) => {
       };
       fetchVehicleData();
     }
-  }, [selectedOption, onSelect]);
+  }, [selectedOption, onSelect, autoNavigate, navigate, saveVehicle]);
 
   if (error) {
     return (
-      <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-        <p className="text-red-600">{error}</p>
-        <button 
-          onClick={() => setError(null)}
-          className="mt-2 text-sm text-red-500 hover:text-red-700"
-        >
-          Try Again
-        </button>
+      <div className="alert alert-danger d-flex align-items-center" role="alert">
+        <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
+        <div>
+          <strong>Error:</strong> {error}
+          <button 
+            onClick={() => setError(null)}
+            className="btn btn-sm btn-outline-danger ms-2"
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Year Selection */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Year
-          </label>
-          <select
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(e.target.value)}
-            className="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-            disabled={loading}
-          >
-            <option value="">Select Year</option>
-            {Array.isArray(years) && years.map((year) => (
-              <option key={year.value} value={year.value}>
-                {year.text}
-              </option>
-            ))}
-          </select>
+    <div className="card">
+      <div className="card-body">
+        <div className="text-center mb-4">
+          <FontAwesomeIcon icon={faCar} className="text-primary mb-3" size="3x" />
+          <h4>Select Your Vehicle</h4>
+          <p className="text-muted">Choose your vehicle for accurate carbon footprint calculation</p>
         </div>
 
-        {/* Make Selection */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Make
-          </label>
-          <select
-            value={selectedMake}
-            onChange={(e) => setSelectedMake(e.target.value)}
-            className="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-            disabled={!selectedYear || loading}
-          >
-            <option value="">Select Make</option>
-            {Array.isArray(makes) && makes.map((make) => (
-              <option key={make.value} value={make.value}>
-                {make.text}
-              </option>
-            ))}
-          </select>
+        <div className="row g-3">
+          {/* Year Selection */}
+          <div className="col-md-6 col-lg-3">
+            <label className="form-label fw-bold">
+              <span className="text-primary">1.</span> Year
+            </label>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="form-select form-select-lg"
+              disabled={loading}
+            >
+              <option value="">Select Year</option>
+              {Array.isArray(years) && years.map((year) => (
+                <option key={year.value} value={year.value}>
+                  {year.text}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Make Selection */}
+          <div className="col-md-6 col-lg-3">
+            <label className="form-label fw-bold">
+              <span className="text-primary">2.</span> Make
+            </label>
+            <select
+              value={selectedMake}
+              onChange={(e) => setSelectedMake(e.target.value)}
+              className="form-select form-select-lg"
+              disabled={!selectedYear || loading}
+            >
+              <option value="">Select Make</option>
+              {Array.isArray(makes) && makes.map((make) => (
+                <option key={make.value} value={make.value}>
+                  {make.text}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Model Selection */}
+          <div className="col-md-6 col-lg-3">
+            <label className="form-label fw-bold">
+              <span className="text-primary">3.</span> Model
+            </label>
+            <select
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
+              className="form-select form-select-lg"
+              disabled={!selectedMake || loading}
+            >
+              <option value="">Select Model</option>
+              {Array.isArray(models) && models.map((model) => (
+                <option key={model.value} value={model.value}>
+                  {model.text}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Options Selection */}
+          <div className="col-md-6 col-lg-3">
+            <label className="form-label fw-bold">
+              <span className="text-primary">4.</span> Options
+            </label>
+            <select
+              value={selectedOption}
+              onChange={(e) => setSelectedOption(e.target.value)}
+              className="form-select form-select-lg"
+              disabled={!selectedModel || loading}
+            >
+              <option value="">Select Options</option>
+              {Array.isArray(options) && options.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.text}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        {/* Model Selection */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Model
-          </label>
-          <select
-            value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value)}
-            className="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-            disabled={!selectedMake || loading}
-          >
-            <option value="">Select Model</option>
-            {Array.isArray(models) && models.map((model) => (
-              <option key={model.value} value={model.value}>
-                {model.text}
-              </option>
-            ))}
-          </select>
-        </div>
+        {loading && (
+          <div className="text-center mt-4">
+            <FontAwesomeIcon icon={faSpinner} className="fa-spin text-primary me-2" size="lg" />
+            <span className="text-muted">Loading vehicle data...</span>
+          </div>
+        )}
 
-        {/* Options Selection */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Options
-          </label>
-          <select
-            value={selectedOption}
-            onChange={(e) => setSelectedOption(e.target.value)}
-            className="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-            disabled={!selectedModel || loading}
-          >
-            <option value="">Select Options</option>
-            {Array.isArray(options) && options.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.text}
-              </option>
-            ))}
-          </select>
+        {selectedOption && !loading && (
+          <div className="alert alert-success mt-3 d-flex align-items-center" role="alert">
+            <FontAwesomeIcon icon={faCheckCircle} className="me-2" />
+            <div>
+              <strong>Vehicle selected!</strong> Redirecting to route calculation...
+            </div>
+          </div>
+        )}
+
+        <div className="mt-4">
+          <div className="progress" style={{ height: '4px' }}>
+            <div 
+              className="progress-bar bg-primary" 
+              style={{ 
+                width: `${selectedOption ? 100 : selectedModel ? 75 : selectedMake ? 50 : selectedYear ? 25 : 0}%` 
+              }}
+            ></div>
+          </div>
+          <small className="text-muted mt-2 d-block">
+            Step {selectedOption ? 4 : selectedModel ? 3 : selectedMake ? 2 : selectedYear ? 1 : 0} of 4
+          </small>
         </div>
       </div>
-
-      {loading && (
-        <div className="flex justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
-        </div>
-      )}
     </div>
   );
 }; 

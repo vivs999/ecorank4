@@ -8,9 +8,7 @@ import {
   query,
   where,
   orderBy,
-  limit,
   Timestamp,
-  DocumentData,
   FirestoreError
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';

@@ -23,41 +23,39 @@ const LeaderboardPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Leaderboard</h1>
-        <div className="flex space-x-4">
-          <button
-            onClick={() => handleTabChange('current')}
-            className={`px-4 py-2 rounded-lg transition-colors ${
-              activeTab === 'current'
-                ? 'bg-green-500 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            Current Challenge
-          </button>
-          <button
-            onClick={() => handleTabChange('overall')}
-            className={`px-4 py-2 rounded-lg transition-colors ${
-              activeTab === 'overall'
-                ? 'bg-green-500 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            Overall Rankings
-          </button>
+    <div className="container-fluid py-4">
+      <div className="row justify-content-center">
+        <div className="col-lg-10">
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <h1 className="h2 mb-0">Leaderboard</h1>
+            <div className="btn-group" role="group">
+              <button
+                type="button"
+                className={`btn ${activeTab === 'current' ? 'btn-success' : 'btn-outline-success'}`}
+                onClick={() => handleTabChange('current')}
+              >
+                Current Challenge
+              </button>
+              <button
+                type="button"
+                className={`btn ${activeTab === 'overall' ? 'btn-success' : 'btn-outline-success'}`}
+                onClick={() => handleTabChange('overall')}
+              >
+                Overall Rankings
+              </button>
+            </div>
+          </div>
+
+          <Leaderboard
+            entries={entries}
+            title={activeTab === 'current' ? 'Current Challenge Rankings' : 'Overall Rankings'}
+            isLoading={isLoading}
+            error={error}
+            showCrew={true}
+            showAchievements={true}
+          />
         </div>
       </div>
-
-      <Leaderboard
-        entries={entries}
-        title={activeTab === 'current' ? 'Current Challenge Rankings' : 'Overall Rankings'}
-        isLoading={isLoading}
-        error={error}
-        showCrew={true}
-        showAchievements={true}
-      />
     </div>
   );
 };

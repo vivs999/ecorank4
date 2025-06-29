@@ -3,17 +3,12 @@ import {
   doc,
   getDoc,
   getDocs,
-  setDoc,
   updateDoc,
   addDoc,
   query,
   where,
   orderBy,
-  limit,
-  startAfter,
-  Timestamp,
-  DocumentData,
-  FirestoreError
+  limit
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { 

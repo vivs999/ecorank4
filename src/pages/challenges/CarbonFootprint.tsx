@@ -1,23 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { googleMapsService } from '../../services/googleMapsService';
-import { CarSelection } from '../../components/CarSelection';
 import { VehicleInfo } from '../../components/VehicleInfo';
-import { VehicleData } from '../../services/carEmissions';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMapMarkerAlt, faRoute, faCalculator, faCar, faBus, faBicycle, faWalking } from '@fortawesome/free-solid-svg-icons';
+import { faMapMarkerAlt, faRoute, faCalculator, faCar, faBus, faBicycle, faWalking, faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 
 const CarbonFootprint: React.FC = () => {
   const navigate = useNavigate();
-  const { submitCarbonFootprint } = useApp();
+  const location = useLocation();
+  const { submitCarbonFootprint, selectedVehicle, clearVehicle } = useApp();
   const [startLocation, setStartLocation] = useState('');
   const [endLocation, setEndLocation] = useState('');
   const [distance, setDistance] = useState('');
   const [duration, setDuration] = useState('');
-  const [transportType, setTransportType] = useState<'car' | 'public' | 'bike' | 'walk'>('car');
-  const [selectedVehicle, setSelectedVehicle] = useState<VehicleData | null>(null);
-  const [showCarSelection, setShowCarSelection] = useState(false);
+  const [transportType, setTransportType] = useState<'car' | 'public' | 'bike' | 'walk'>('public');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,9 +22,20 @@ const CarbonFootprint: React.FC = () => {
   const [endSuggestions, setEndSuggestions] = useState<string[]>([]);
   const [showStartSuggestions, setShowStartSuggestions] = useState(false);
   const [showEndSuggestions, setShowEndSuggestions] = useState(false);
+  const [carSkipped, setCarSkipped] = useState(false);
+
+  // Check if car was skipped from URL parameter
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    if (urlParams.get('skipCar') === 'true') {
+      setCarSkipped(true);
+      setTransportType('public'); // Default to public transport when car is skipped
+      clearVehicle(); // Ensure no vehicle data is present
+    }
+  }, [location.search, clearVehicle]);
 
   const transportOptions = [
-    { value: 'car', label: 'Car', icon: faCar, carbonFactor: 0.2 },
+    ...(carSkipped ? [] : [{ value: 'car', label: 'Car', icon: faCar, carbonFactor: 0.2 }]),
     { value: 'public', label: 'Public Transport', icon: faBus, carbonFactor: 0.05 },
     { value: 'bike', label: 'Bicycle', icon: faBicycle, carbonFactor: 0 },
     { value: 'walk', label: 'Walking', icon: faWalking, carbonFactor: 0 }
@@ -82,7 +90,9 @@ const CarbonFootprint: React.FC = () => {
 
     try {
       const routeInfo = await googleMapsService.calculateRoute(startLocation, endLocation);
-      setDistance(routeInfo.distance.toFixed(1));
+      // Convert kilometers to miles and display with 1 decimal place
+      const distanceInMiles = (routeInfo.distance * 0.621371).toFixed(1);
+      setDistance(distanceInMiles);
       setDuration(routeInfo.duration.toFixed(0));
     } catch (error) {
       setError('Failed to calculate route. Please check your locations and try again.');
@@ -138,15 +148,10 @@ const CarbonFootprint: React.FC = () => {
     setShowEndSuggestions(false);
   };
 
-  const handleVehicleSelect = (vehicleData: VehicleData) => {
-    setSelectedVehicle(vehicleData);
-    setShowCarSelection(false);
-  };
-
   const calculateCarbonFootprint = () => {
     if (!distance) return 0;
     
-    const distanceKm = parseFloat(distance);
+    const distanceMiles = parseFloat(distance);
     
     if (transportType === 'car' && selectedVehicle) {
       // Check if we have valid vehicle data
@@ -157,19 +162,23 @@ const CarbonFootprint: React.FC = () => {
       if (hasValidVehicleData) {
         // Use actual vehicle data for more accurate calculation
         const mpg = selectedVehicle.comb08; // Combined MPG
-        const gallonsUsed = distanceKm * 0.621371 / mpg; // Convert km to miles, then to gallons
+        const gallonsUsed = distanceMiles / mpg; // Distance is already in miles
         const co2PerGallon = 8.89; // kg CO2 per gallon of gasoline
         return gallonsUsed * co2PerGallon;
       } else {
         // Use average car values when vehicle data is not available
         const averageMpg = 25; // Average car MPG
-        const gallonsUsed = distanceKm * 0.621371 / averageMpg;
+        const gallonsUsed = distanceMiles / averageMpg;
         const co2PerGallon = 8.89;
         return gallonsUsed * co2PerGallon;
       }
-    } else {
-      // Use generic factors for other transport types
+    } else if (transportType === 'public') {
+      // Public transport emissions (convert miles to km for the calculation)
+      const distanceKm = distanceMiles * 1.60934;
       return googleMapsService.calculateCarbonFootprint(distanceKm, transportType);
+    } else {
+      // Walking and biking have 0 emissions
+      return 0;
     }
   };
 
@@ -177,12 +186,30 @@ const CarbonFootprint: React.FC = () => {
     <div className="container py-4">
       <div className="row">
         <div className="col-md-8 mx-auto">
-      <div className="card">
-        <div className="card-body">
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <button
+              className="btn btn-outline-secondary"
+              onClick={() => navigate('/demo')}
+            >
+              <FontAwesomeIcon icon={faArrowLeft} className="me-2" />
+              Back to Demo
+            </button>
+          </div>
+
+          <div className="card">
+            <div className="card-body">
               <div className="text-center mb-4">
                 <FontAwesomeIcon icon={faCalculator} className="text-primary mb-3" size="3x" />
                 <h2>Carbon Footprint Calculator</h2>
                 <p className="text-muted">Calculate your transportation carbon emissions</p>
+                {carSkipped && (
+                  <div className="alert alert-warning">
+                    <small>
+                      <strong>Car option skipped:</strong> You chose to skip vehicle selection. 
+                      Only public transport, walking, and biking options are available.
+                    </small>
+                  </div>
+                )}
               </div>
           
           {error && (
@@ -281,7 +308,7 @@ const CarbonFootprint: React.FC = () => {
                 {distance && (
                   <div className="row mb-3">
                     <div className="col-md-6">
-                      <label className="form-label">Distance (km)</label>
+                      <label className="form-label">Distance (miles)</label>
                       <input
                         type="text"
                         className="form-control"
@@ -305,19 +332,18 @@ const CarbonFootprint: React.FC = () => {
                   <label className="form-label">Transport Type</label>
                   <div className="row g-3">
                     {transportOptions.map((option) => (
-                      <div key={option.value} className="col-md-3">
+                      <div key={option.value} className={carSkipped ? "col-md-4" : "col-md-3"}>
                         <div 
                           className={`card h-100 cursor-pointer ${
                             transportType === option.value ? 'border-primary' : ''
                           }`}
                           onClick={() => {
                             setTransportType(option.value as any);
-                            if (option.value === 'car') {
-                              setShowCarSelection(true);
-                            } else {
-                              setShowCarSelection(false);
-                              setSelectedVehicle(null);
+                            if (option.value === 'car' && !selectedVehicle && !carSkipped) {
+                              // Navigate to car selection page if no vehicle is selected and car wasn't skipped
+                              navigate('/challenges/transportation');
                             }
+                            // Don't clear vehicle data when switching transport types - keep it available for car
                           }}
                           style={{ cursor: 'pointer' }}
                         >
@@ -335,42 +361,20 @@ const CarbonFootprint: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Car Selection Section */}
-                {transportType === 'car' && (
+                {/* Vehicle Information Display */}
+                {transportType === 'car' && selectedVehicle && (
                   <div className="mb-3">
                     <div className="d-flex justify-content-between align-items-center mb-2">
-                      <label className="form-label mb-0">Vehicle Selection</label>
-                      {!showCarSelection && (
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-primary"
-                          onClick={() => setShowCarSelection(true)}
-                        >
-                          {selectedVehicle ? 'Change Vehicle' : 'Select Vehicle'}
-                        </button>
-                      )}
+                      <label className="form-label mb-0">Selected Vehicle</label>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-primary"
+                        onClick={() => navigate('/challenges/transportation')}
+                      >
+                        Change Vehicle
+                      </button>
                     </div>
-                    
-                    {showCarSelection ? (
-                      <div className="card">
-                        <div className="card-body">
-                          <CarSelection onSelect={handleVehicleSelect} />
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline-secondary mt-2"
-                            onClick={() => setShowCarSelection(false)}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : selectedVehicle ? (
-                      <VehicleInfo vehicleData={selectedVehicle} />
-                    ) : (
-                      <div className="alert alert-warning">
-                        Please select your vehicle for accurate carbon footprint calculation.
-                      </div>
-                    )}
+                    <VehicleInfo vehicleData={selectedVehicle} />
                   </div>
                 )}
 
@@ -392,6 +396,16 @@ const CarbonFootprint: React.FC = () => {
                         })()}
                       </div>
                     )}
+                    {transportType === 'public' && (
+                      <div className="mt-1 text-sm">
+                        Based on public transportation emissions
+                      </div>
+                    )}
+                    {(transportType === 'bike' || transportType === 'walk') && (
+                      <div className="mt-1 text-sm">
+                        Zero emissions - great choice for the environment!
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -402,13 +416,6 @@ const CarbonFootprint: React.FC = () => {
                     disabled={isSubmitting || !distance}
                   >
                     {isSubmitting ? 'Submitting...' : 'Submit Challenge'}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-outline-secondary"
-                    onClick={() => navigate('/demo')}
-                  >
-                    Back to Demo
                   </button>
                 </div>
               </form>

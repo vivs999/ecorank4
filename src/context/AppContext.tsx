@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User, Crew, Challenge, ChallengeSubmission, LeaderboardEntry, UserProfile, CarbonFootprintSubmission, FoodCarbonSubmission, RecyclingSubmission, ShowerTimerSubmission } from '../types';
+import { VehicleData } from '../services/carEmissions';
 import { db } from '../lib/firebase';
 import { collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, orderBy, limit, Timestamp } from 'firebase/firestore';
 import { useAuth } from './AuthContext';
@@ -12,6 +13,7 @@ interface AppContextType {
   challenges: Challenge[];
   currentChallenge: Challenge | null;
   leaderboard: LeaderboardEntry[];
+  selectedVehicle: VehicleData | null;
   isLoading: boolean;
   error: string | null;
   refreshData: () => Promise<void>;
@@ -31,6 +33,9 @@ interface AppContextType {
   getCrewChallenges: (crewId: string) => Promise<Challenge[]>;
   removeMember: (crewId: string, memberId: string) => Promise<void>;
   transferLeadership: (crewId: string, newLeaderId: string) => Promise<void>;
+  saveVehicle: (vehicleData: VehicleData) => void;
+  clearVehicle: () => void;
+  createSampleLeaderboardData: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -45,6 +50,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [challenges] = useState<Challenge[]>([]);
   const [currentChallenge] = useState<Challenge | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [selectedVehicle, setSelectedVehicle] = useState<VehicleData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,30 +61,163 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const fetchLeaderboard = useCallback(async () => {
     try {
-      const leaderboardQuery = query(
-        collection(db, 'leaderboard'),
-        orderBy('score', 'desc'),
-        limit(10)
-      );
-      const snapshot = await getDocs(leaderboardQuery);
-      const entries = snapshot.docs.map((doc, index) => {
+      console.log('Fetching leaderboard data...');
+      
+      // Fetch all submissions from different collections and aggregate scores
+      const [carbonFootprints, foodCarbon, recycling, showerTimers] = await Promise.all([
+        getDocs(collection(db, 'carbonFootprints')).catch(() => ({ docs: [] })),
+        getDocs(collection(db, 'foodCarbon')).catch(() => ({ docs: [] })),
+        getDocs(collection(db, 'recycling')).catch(() => ({ docs: [] })),
+        getDocs(collection(db, 'showerTimers')).catch(() => ({ docs: [] }))
+      ]);
+
+      console.log('Collections fetched:', {
+        carbonFootprints: carbonFootprints.docs.length,
+        foodCarbon: foodCarbon.docs.length,
+        recycling: recycling.docs.length,
+        showerTimers: showerTimers.docs.length
+      });
+
+      // Create a map to aggregate scores by user
+      const userScores = new Map<string, {
+        userId: string;
+        displayName: string;
+        totalScore: number;
+        submissions: number;
+        crewId?: string;
+        crewName?: string;
+        achievements: string[];
+      }>();
+
+      // Process carbon footprint submissions
+      carbonFootprints.docs.forEach(doc => {
         const data = doc.data();
-        if (!data.crewId) {
-          console.warn(`Leaderboard entry ${doc.id} is missing crewId`);
-          return null;
-        }
-        return {
-          userId: data.userId,
-          displayName: data.displayName,
-          score: data.score || 0,
-          position: index + 1,
+        if (!data.userId) return; // Skip entries without userId
+        
+        const userId = data.userId;
+        const existing = userScores.get(userId) || {
+          userId,
+          displayName: data.displayName || 'Unknown User',
+          totalScore: 0,
+          submissions: 0,
           crewId: data.crewId,
-          achievements: data.achievements || [],
-          tiedWith: data.tiedWith,
-          crewName: data.crewName
+          crewName: data.crewName,
+          achievements: [] as string[]
+        };
+        existing.totalScore += data.score || 0;
+        existing.submissions += 1;
+        if (data.score > 0) {
+          existing.achievements.push('Carbon Tracker');
+        }
+        userScores.set(userId, existing);
+      });
+
+      // Process food carbon submissions
+      foodCarbon.docs.forEach(doc => {
+        const data = doc.data();
+        if (!data.userId) return;
+        
+        const userId = data.userId;
+        const existing = userScores.get(userId) || {
+          userId,
+          displayName: data.displayName || 'Unknown User',
+          totalScore: 0,
+          submissions: 0,
+          crewId: data.crewId,
+          crewName: data.crewName,
+          achievements: [] as string[]
+        };
+        existing.totalScore += data.score || 0;
+        existing.submissions += 1;
+        if (data.score > 0) {
+          existing.achievements.push('Food Warrior');
+        }
+        userScores.set(userId, existing);
+      });
+
+      // Process recycling submissions
+      recycling.docs.forEach(doc => {
+        const data = doc.data();
+        if (!data.userId) return;
+        
+        const userId = data.userId;
+        const existing = userScores.get(userId) || {
+          userId,
+          displayName: data.displayName || 'Unknown User',
+          totalScore: 0,
+          submissions: 0,
+          crewId: data.crewId,
+          crewName: data.crewName,
+          achievements: [] as string[]
+        };
+        existing.totalScore += data.score || 0;
+        existing.submissions += 1;
+        if (data.score > 0) {
+          existing.achievements.push('Recycling Master');
+        }
+        userScores.set(userId, existing);
+      });
+
+      // Process shower timer submissions
+      showerTimers.docs.forEach(doc => {
+        const data = doc.data();
+        if (!data.userId) return;
+        
+        const userId = data.userId;
+        const existing = userScores.get(userId) || {
+          userId,
+          displayName: data.displayName || 'Unknown User',
+          totalScore: 0,
+          submissions: 0,
+          crewId: data.crewId,
+          crewName: data.crewName,
+          achievements: [] as string[]
+        };
+        existing.totalScore += data.score || 0;
+        existing.submissions += 1;
+        if (data.score > 0) {
+          existing.achievements.push('Water Saver');
+        }
+        userScores.set(userId, existing);
+      });
+
+      console.log('Total users found:', userScores.size);
+
+      // Convert to array and sort by total score
+      const sortedEntries = Array.from(userScores.values())
+        .sort((a, b) => b.totalScore - a.totalScore);
+
+      // Handle ties properly
+      const leaderboardEntries: LeaderboardEntry[] = sortedEntries.map((entry, index) => {
+        let position = index + 1;
+        
+        // Check for ties with previous entry
+        if (index > 0 && entry.totalScore === sortedEntries[index - 1].totalScore) {
+          position = leaderboardEntries[index - 1].position;
+        }
+
+        // Add additional achievements based on performance
+        const achievements = [...entry.achievements];
+        if (entry.submissions >= 10) achievements.push('Dedicated Participant');
+        if (entry.totalScore >= 1000) achievements.push('High Scorer');
+        if (entry.totalScore >= 500) achievements.push('Consistent Saver');
+        if (position === 1) achievements.push('Leader');
+        if (position <= 3) achievements.push('Top Performer');
+
+        return {
+          userId: entry.userId,
+          displayName: entry.displayName,
+          score: entry.totalScore,
+          position,
+          crewId: entry.crewId || '',
+          crewName: entry.crewName || '',
+          achievements: achievements,
+          tiedWith: undefined // Simplified tie handling for now
         } as LeaderboardEntry;
-      }).filter(entry => entry !== null) as LeaderboardEntry[];
-      setLeaderboard(entries);
+      });
+
+      console.log('Leaderboard entries created:', leaderboardEntries.length);
+      setLeaderboard(leaderboardEntries);
     } catch (err) {
       console.error('Error fetching leaderboard:', err);
       setError('Failed to fetch leaderboard');
@@ -299,6 +438,59 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const createSampleLeaderboardData = useCallback(async () => {
+    if (!currentUser) return;
+    
+    try {
+      console.log('Creating sample leaderboard data...');
+      
+      // Create sample carbon footprint submission
+      const carbonSubmission = {
+        userId: currentUser.uid,
+        displayName: currentUser.displayName || 'Test User',
+        challengeId: 'sample-challenge',
+        crewId: 'sample-crew',
+        crewName: 'Sample Crew',
+        date: new Date(),
+        startLocation: 'Home',
+        endLocation: 'Work',
+        distance: 10,
+        transportType: 'car' as const,
+        score: 150
+      };
+      
+      await setDoc(doc(collection(db, 'carbonFootprints')), {
+        ...carbonSubmission,
+        createdAt: Timestamp.now()
+      });
+      
+      // Create sample food carbon submission
+      const foodSubmission = {
+        userId: currentUser.uid,
+        displayName: currentUser.displayName || 'Test User',
+        challengeId: 'sample-food-challenge',
+        crewId: 'sample-crew',
+        crewName: 'Sample Crew',
+        date: new Date(),
+        foodItems: [
+          { id: '1', name: 'Vegetables', quantity: 2, carbonFootprint: 50, type: 'vegetables' }
+        ],
+        totalCarbonFootprint: 50,
+        score: 100
+      };
+      
+      await setDoc(doc(collection(db, 'foodCarbon')), {
+        ...foodSubmission,
+        createdAt: Timestamp.now()
+      });
+      
+      console.log('Sample data created successfully');
+      await refreshData(); // Refresh to show the new data
+    } catch (err) {
+      console.error('Error creating sample data:', err);
+    }
+  }, [currentUser, refreshData]);
+
   useEffect(() => {
     refreshData();
   }, [refreshData]);
@@ -318,6 +510,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     challenges,
     currentChallenge,
     leaderboard,
+    selectedVehicle,
     isLoading,
     error,
     refreshData,
@@ -523,7 +716,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         leaderId: newLeaderId
       });
       await refreshData();
-    }
+    },
+    saveVehicle: (vehicleData: VehicleData) => {
+      setSelectedVehicle(vehicleData);
+    },
+    clearVehicle: () => {
+      setSelectedVehicle(null);
+    },
+    createSampleLeaderboardData
   };
 
   return (
