@@ -1,5 +1,21 @@
 .App {
   text-align: center;
+  overflow-x: hidden;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Mobile optimizations for App component */
+@media (max-width: 768px) {
+  .App {
+    /* Ensure proper mobile scrolling */
+    -webkit-overflow-scrolling: touch;
+    overflow-x: hidden;
+    /* Prevent horizontal scroll */
+    max-width: 100vw;
+    /* Better touch handling */
+    touch-action: manipulation;
+  }
 }
 
 .App-logo {
