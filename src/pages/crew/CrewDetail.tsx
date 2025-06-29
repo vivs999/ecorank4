@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUsers, faSignOutAlt, faUserFriends, faTrophy, faShareAlt, faKey } from '@fortawesome/free-solid-svg-icons';
-import { collection, query, where, getDocs, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { faUsers, faSignOutAlt, faUserFriends, faTrophy, faShareAlt, faKey, faLeaf, faSync } from '@fortawesome/free-solid-svg-icons';
+import { collection, doc, getDoc, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { generateRandomCode } from '../../utils/helpers';
 
@@ -20,6 +20,7 @@ const CrewDetail: React.FC = () => {
   const [isCreator, setIsCreator] = useState(false);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [regeneratingCode, setRegeneratingCode] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchCrewMembers = useCallback(async () => {
     if (!userCrew) return;
@@ -34,17 +35,46 @@ const CrewDetail: React.FC = () => {
         if (userDoc.exists()) {
           const userData = userDoc.data();
           
-          // Calculate user score based on submissions
-          const submissionsQuery = query(
-            collection(db, 'submissions'),
-            where('userId', '==', memberId)
-          );
-          const submissionsSnapshot = await getDocs(submissionsQuery);
+          // Calculate user score based on submissions from all collections
+          const [carbonFootprints, foodCarbon, recycling, showerTimers] = await Promise.all([
+            getDocs(collection(db, 'carbonFootprints')).catch(() => ({ docs: [] })),
+            getDocs(collection(db, 'foodCarbon')).catch(() => ({ docs: [] })),
+            getDocs(collection(db, 'recycling')).catch(() => ({ docs: [] })),
+            getDocs(collection(db, 'showerTimers')).catch(() => ({ docs: [] }))
+          ]);
+          
           let totalScore = 0;
           
-          submissionsSnapshot.forEach(doc => {
+          // Sum scores from carbon footprint submissions
+          carbonFootprints.docs.forEach(doc => {
             const submission = doc.data();
-            totalScore += submission.score || 0;
+            if (submission.userId === memberId) {
+              totalScore += submission.score || 0;
+            }
+          });
+          
+          // Sum scores from food carbon submissions
+          foodCarbon.docs.forEach(doc => {
+            const submission = doc.data();
+            if (submission.userId === memberId) {
+              totalScore += submission.score || 0;
+            }
+          });
+          
+          // Sum scores from recycling submissions
+          recycling.docs.forEach(doc => {
+            const submission = doc.data();
+            if (submission.userId === memberId) {
+              totalScore += submission.score || 0;
+            }
+          });
+          
+          // Sum scores from shower timer submissions
+          showerTimers.docs.forEach(doc => {
+            const submission = doc.data();
+            if (submission.userId === memberId) {
+              totalScore += submission.score || 0;
+            }
           });
           
           membersData.push({
@@ -70,31 +100,73 @@ const CrewDetail: React.FC = () => {
     if (!userCrew) return;
     
     try {
-      // Get submissions for all members of the crew
+      // Get submissions for all members of the crew from all collections
       const performanceData = [
-        { challengeId: 1, name: 'Carbon Footprint', score: 0, count: 0 },
-        { challengeId: 2, name: 'Recycling', score: 0, count: 0 },
-        { challengeId: 3, name: 'Food Carbon', score: 0, count: 0 },
-        { challengeId: 4, name: 'Shower Timer', score: 0, count: 0 }
+        { challengeId: 'carbon-footprint', name: 'Carbon Footprint', score: 0, count: 0, totalImpact: 0 },
+        { challengeId: 'recycling', name: 'Recycling', score: 0, count: 0, totalImpact: 0 },
+        { challengeId: 'food-carbon', name: 'Food Carbon', score: 0, count: 0, totalImpact: 0 },
+        { challengeId: 'shower-timer', name: 'Shower Timer', score: 0, count: 0, totalImpact: 0 }
       ];
       
-      // For each member, get their submissions
-      for (const memberId of userCrew.members) {
-        const submissionsQuery = query(
-          collection(db, 'submissions'),
-          where('userId', '==', memberId)
-        );
-        const submissionsSnapshot = await getDocs(submissionsQuery);
-        
-        submissionsSnapshot.forEach(doc => {
-          const submission = doc.data();
-          const challenge = performanceData.find(c => c.challengeId === submission.challengeId);
+      // Fetch submissions from all collections
+      const [carbonFootprints, foodCarbon, recycling, showerTimers] = await Promise.all([
+        getDocs(collection(db, 'carbonFootprints')).catch(() => ({ docs: [] })),
+        getDocs(collection(db, 'foodCarbon')).catch(() => ({ docs: [] })),
+        getDocs(collection(db, 'recycling')).catch(() => ({ docs: [] })),
+        getDocs(collection(db, 'showerTimers')).catch(() => ({ docs: [] }))
+      ]);
+
+      // Process carbon footprint submissions
+      carbonFootprints.docs.forEach(doc => {
+        const submission = doc.data();
+        if (userCrew.members.includes(submission.userId)) {
+          const challenge = performanceData.find(c => c.challengeId === 'carbon-footprint');
           if (challenge) {
             challenge.score += submission.score || 0;
             challenge.count += 1;
+            challenge.totalImpact += submission.distance || 0;
           }
-        });
-      }
+        }
+      });
+
+      // Process food carbon submissions
+      foodCarbon.docs.forEach(doc => {
+        const submission = doc.data();
+        if (userCrew.members.includes(submission.userId)) {
+          const challenge = performanceData.find(c => c.challengeId === 'food-carbon');
+          if (challenge) {
+            challenge.score += submission.score || 0;
+            challenge.count += 1;
+            challenge.totalImpact += submission.totalCarbonFootprint || 0;
+          }
+        }
+      });
+
+      // Process recycling submissions
+      recycling.docs.forEach(doc => {
+        const submission = doc.data();
+        if (userCrew.members.includes(submission.userId)) {
+          const challenge = performanceData.find(c => c.challengeId === 'recycling');
+          if (challenge) {
+            challenge.score += submission.score || 0;
+            challenge.count += 1;
+            challenge.totalImpact += submission.quantity || 0;
+          }
+        }
+      });
+
+      // Process shower timer submissions
+      showerTimers.docs.forEach(doc => {
+        const submission = doc.data();
+        if (userCrew.members.includes(submission.userId)) {
+          const challenge = performanceData.find(c => c.challengeId === 'shower-timer');
+          if (challenge) {
+            challenge.score += submission.score || 0;
+            challenge.count += 1;
+            challenge.totalImpact += submission.duration || 0;
+          }
+        }
+      });
       
       // Calculate average score for each challenge
       performanceData.forEach(challenge => {
@@ -117,6 +189,22 @@ const CrewDetail: React.FC = () => {
     }
   }, [userCrew, userProfile, currentUser]);
 
+  const refreshCrewData = useCallback(async () => {
+    if (!userCrew) return;
+    
+    try {
+      setRefreshing(true);
+      await Promise.all([
+        fetchCrewMembers(),
+        fetchCrewPerformance()
+      ]);
+    } catch (err) {
+      console.error('Error refreshing crew data:', err);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [userCrew, fetchCrewMembers, fetchCrewPerformance]);
+
   useEffect(() => {
     // Fetch crew members and performance when crew changes
     if (userCrew) {
@@ -124,6 +212,13 @@ const CrewDetail: React.FC = () => {
       fetchCrewPerformance();
     }
   }, [userCrew, fetchCrewMembers, fetchCrewPerformance]);
+
+  // Auto-refresh when component mounts to get latest data
+  useEffect(() => {
+    if (userCrew) {
+      refreshCrewData();
+    }
+  }, [userCrew, refreshCrewData]); // Include refreshCrewData in dependencies
 
   const handleLeaveCrew = async () => {
     if (!window.confirm('Are you sure you want to leave this crew?')) return;
@@ -213,6 +308,14 @@ const CrewDetail: React.FC = () => {
             </div>
             
             <div className="d-flex gap-2">
+              <button
+                className="btn btn-outline-primary"
+                onClick={refreshCrewData}
+                disabled={refreshing}
+              >
+                <FontAwesomeIcon icon={faSync} className={`me-2 ${refreshing ? 'fa-spin' : ''}`} />
+                {refreshing ? 'Refreshing...' : 'Refresh'}
+              </button>
               <Link to="/crew/join" className="btn btn-outline-primary">
                 <FontAwesomeIcon icon={faUsers} className="me-2" />
                 Join Another Crew
@@ -347,7 +450,9 @@ const CrewDetail: React.FC = () => {
                   <thead>
                     <tr>
                       <th>Challenge</th>
-                      <th>Score</th>
+                      <th>Avg Score</th>
+                      <th>Submissions</th>
+                      <th>Total Impact</th>
                       <th>Progress</th>
                     </tr>
                   </thead>
@@ -356,22 +461,53 @@ const CrewDetail: React.FC = () => {
                       <tr key={perf.challengeId}>
                         <td>{perf.name}</td>
                         <td>{perf.score.toFixed(1)}</td>
+                        <td>{perf.count}</td>
                         <td>
-                          <div className="progress">
+                          {perf.challengeId === 'carbon-footprint' && `${perf.totalImpact.toFixed(1)} mi`}
+                          {perf.challengeId === 'food-carbon' && `${perf.totalImpact.toFixed(1)} kg CO₂`}
+                          {perf.challengeId === 'recycling' && `${perf.totalImpact} items`}
+                          {perf.challengeId === 'shower-timer' && `${perf.totalImpact.toFixed(0)} min`}
+                        </td>
+                        <td>
+                          <div className="progress" style={{ height: '20px' }}>
                             <div 
                               className="progress-bar bg-success" 
                               role="progressbar" 
-                              style={{ width: `${Math.min(100, perf.score)}%` }}
+                              style={{ width: `${Math.min(100, (perf.score / 100) * 100)}%` }}
                               aria-valuenow={perf.score}
                               aria-valuemin={0}
                               aria-valuemax={100}
-                            ></div>
+                            >
+                              {perf.score > 0 && `${perf.score.toFixed(0)}%`}
+                            </div>
                           </div>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+              </div>
+              
+              {/* Total Impact Summary */}
+              <div className="mt-3 p-3 bg-light rounded">
+                <h6 className="mb-2">
+                  <FontAwesomeIcon icon={faLeaf} className="me-2" />
+                  Total Crew Impact
+                </h6>
+                <div className="row text-center">
+                  <div className="col-6">
+                    <div className="h5 text-success mb-1">
+                      {crewPerformance.reduce((total, perf) => total + perf.count, 0)}
+                    </div>
+                    <small className="text-muted">Total Submissions</small>
+                  </div>
+                  <div className="col-6">
+                    <div className="h5 text-primary mb-1">
+                      {crewPerformance.reduce((total, perf) => total + perf.score, 0).toFixed(1)}
+                    </div>
+                    <small className="text-muted">Avg Score</small>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

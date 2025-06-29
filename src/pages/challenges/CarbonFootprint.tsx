@@ -110,17 +110,17 @@ const CarbonFootprint: React.FC = () => {
       return;
     }
 
-      setIsSubmitting(true);
-      setError(null);
+    setIsSubmitting(true);
+    setError(null);
 
     try {
       const score = transportType === 'car' ? 50 : transportType === 'public' ? 80 : 100;
       
       await submitCarbonFootprint({
-        id: 'demo-carbon',
-        userId: 'demo-user',
+        id: '',
+        userId: '',
         challengeId: 'carbon-footprint',
-        crewId: 'demo-crew',
+        crewId: '',
         date: new Date(),
         startLocation,
         endLocation,

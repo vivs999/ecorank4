@@ -32,5 +32,30 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isCrewManager == true;
     }
+    
+    // Allow authenticated users to read and write carbon footprint submissions
+    match /carbonFootprints/{submissionId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to read and write food carbon submissions
+    match /foodCarbon/{submissionId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to read and write recycling submissions
+    match /recycling/{submissionId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to read and write shower timer submissions
+    match /showerTimers/{submissionId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to read leaderboard data
+    match /leaderboard/{entryId} {
+      allow read: if request.auth != null;
+    }
   }
 } 

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { User, Crew, Challenge, ChallengeSubmission, LeaderboardEntry, UserProfile, CarbonFootprintSubmission, FoodCarbonSubmission, RecyclingSubmission, ShowerTimerSubmission } from '../types';
 import { VehicleData } from '../services/carEmissions';
 import { db } from '../lib/firebase';
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, Timestamp } from 'firebase/firestore';
 import { useAuth } from './AuthContext';
 
 interface AppContextType {
@@ -36,6 +36,12 @@ interface AppContextType {
   saveVehicle: (vehicleData: VehicleData) => void;
   clearVehicle: () => void;
   createSampleLeaderboardData: () => Promise<void>;
+  testSubmission: () => Promise<void>;
+  refreshCrewData: () => Promise<void>;
+  comprehensiveTest: () => Promise<void>;
+  authTest: () => Promise<void>;
+  backendTest: () => Promise<void>;
+  firebaseConnectionTest: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -78,138 +84,95 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         showerTimers: showerTimers.docs.length
       });
 
-      // Create a map to aggregate scores by user
-      const userScores = new Map<string, {
-        userId: string;
-        displayName: string;
-        totalScore: number;
-        submissions: number;
-        crewId?: string;
-        crewName?: string;
-        achievements: string[];
-      }>();
-
+      // Aggregate scores by user
+      const userScores = new Map<string, { userId: string; score: number; displayName: string; crewName: string; achievements: string[] }>();
+      
+      console.log('Processing submissions...');
+      
       // Process carbon footprint submissions
       carbonFootprints.docs.forEach(doc => {
         const data = doc.data();
-        if (!data.userId) return; // Skip entries without userId
-        
+        console.log('Carbon footprint submission:', data);
         const userId = data.userId;
-        const existing = userScores.get(userId) || {
-          userId,
-          displayName: data.displayName || 'Unknown User',
-          totalScore: 0,
-          submissions: 0,
-          crewId: data.crewId,
-          crewName: data.crewName,
-          achievements: [] as string[]
-        };
-        existing.totalScore += data.score || 0;
-        existing.submissions += 1;
-        if (data.score > 0) {
-          existing.achievements.push('Carbon Tracker');
+        if (userId) {
+          const existing = userScores.get(userId) || { userId, score: 0, displayName: data.displayName || 'Unknown User', crewName: data.crewName || '', achievements: [] };
+          existing.score += data.score || 0;
+          existing.displayName = data.displayName || existing.displayName;
+          existing.crewName = data.crewName || existing.crewName;
+          userScores.set(userId, existing);
         }
-        userScores.set(userId, existing);
       });
-
+      
       // Process food carbon submissions
       foodCarbon.docs.forEach(doc => {
         const data = doc.data();
-        if (!data.userId) return;
-        
+        console.log('Food carbon submission:', data);
         const userId = data.userId;
-        const existing = userScores.get(userId) || {
-          userId,
-          displayName: data.displayName || 'Unknown User',
-          totalScore: 0,
-          submissions: 0,
-          crewId: data.crewId,
-          crewName: data.crewName,
-          achievements: [] as string[]
-        };
-        existing.totalScore += data.score || 0;
-        existing.submissions += 1;
-        if (data.score > 0) {
-          existing.achievements.push('Food Warrior');
+        if (userId) {
+          const existing = userScores.get(userId) || { userId, score: 0, displayName: data.displayName || 'Unknown User', crewName: data.crewName || '', achievements: [] };
+          existing.score += data.score || 0;
+          existing.displayName = data.displayName || existing.displayName;
+          existing.crewName = data.crewName || existing.crewName;
+          userScores.set(userId, existing);
         }
-        userScores.set(userId, existing);
       });
-
+      
       // Process recycling submissions
       recycling.docs.forEach(doc => {
         const data = doc.data();
-        if (!data.userId) return;
-        
+        console.log('Recycling submission:', data);
         const userId = data.userId;
-        const existing = userScores.get(userId) || {
-          userId,
-          displayName: data.displayName || 'Unknown User',
-          totalScore: 0,
-          submissions: 0,
-          crewId: data.crewId,
-          crewName: data.crewName,
-          achievements: [] as string[]
-        };
-        existing.totalScore += data.score || 0;
-        existing.submissions += 1;
-        if (data.score > 0) {
-          existing.achievements.push('Recycling Master');
+        if (userId) {
+          const existing = userScores.get(userId) || { userId, score: 0, displayName: data.displayName || 'Unknown User', crewName: data.crewName || '', achievements: [] };
+          existing.score += data.score || 0;
+          existing.displayName = data.displayName || existing.displayName;
+          existing.crewName = data.crewName || existing.crewName;
+          userScores.set(userId, existing);
         }
-        userScores.set(userId, existing);
       });
-
+      
       // Process shower timer submissions
       showerTimers.docs.forEach(doc => {
         const data = doc.data();
-        if (!data.userId) return;
-        
+        console.log('Shower timer submission:', data);
         const userId = data.userId;
-        const existing = userScores.get(userId) || {
-          userId,
-          displayName: data.displayName || 'Unknown User',
-          totalScore: 0,
-          submissions: 0,
-          crewId: data.crewId,
-          crewName: data.crewName,
-          achievements: [] as string[]
-        };
-        existing.totalScore += data.score || 0;
-        existing.submissions += 1;
-        if (data.score > 0) {
-          existing.achievements.push('Water Saver');
+        if (userId) {
+          const existing = userScores.get(userId) || { userId, score: 0, displayName: data.displayName || 'Unknown User', crewName: data.crewName || '', achievements: [] };
+          existing.score += data.score || 0;
+          existing.displayName = data.displayName || existing.displayName;
+          existing.crewName = data.crewName || existing.crewName;
+          userScores.set(userId, existing);
         }
-        userScores.set(userId, existing);
       });
-
-      console.log('Total users found:', userScores.size);
+      
+      console.log('User scores map:', userScores);
 
       // Convert to array and sort by total score
       const sortedEntries = Array.from(userScores.values())
-        .sort((a, b) => b.totalScore - a.totalScore);
+        .sort((a, b) => b.score - a.score);
 
       // Handle ties properly
       const leaderboardEntries: LeaderboardEntry[] = sortedEntries.map((entry, index) => {
         let position = index + 1;
         
         // Check for ties with previous entry
-        if (index > 0 && entry.totalScore === sortedEntries[index - 1].totalScore) {
+        if (index > 0 && entry.score === sortedEntries[index - 1].score) {
           position = leaderboardEntries[index - 1].position;
         }
 
         // Add additional achievements based on performance
-        const achievements = [...entry.achievements];
-        if (entry.submissions >= 10) achievements.push('Dedicated Participant');
-        if (entry.totalScore >= 1000) achievements.push('High Scorer');
-        if (entry.totalScore >= 500) achievements.push('Consistent Saver');
+        const achievements = [...(entry.achievements || [])];
+        if (entry.score >= 1000) achievements.push('High Scorer');
+        if (entry.score >= 500) achievements.push('Consistent Saver');
         if (position === 1) achievements.push('Leader');
         if (position <= 3) achievements.push('Top Performer');
 
         return {
           userId: entry.userId,
           displayName: entry.displayName,
-          score: entry.totalScore,
+          score: entry.score,
           position,
-          crewId: entry.crewId || '',
+          crewId: entry.crewName || '',
           crewName: entry.crewName || '',
           achievements: achievements,
           tiedWith: undefined // Simplified tie handling for now
@@ -217,6 +180,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
 
       console.log('Leaderboard entries created:', leaderboardEntries.length);
+      console.log('Final leaderboard:', leaderboardEntries);
       setLeaderboard(leaderboardEntries);
     } catch (err) {
       console.error('Error fetching leaderboard:', err);
@@ -229,29 +193,96 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const userDoc = await getDoc(doc(db, 'users', userId));
       if (userDoc.exists()) {
         const data = userDoc.data();
+        
+        // Recalculate user stats from all submission collections
+        const [carbonFootprints, foodCarbon, recycling, showerTimers] = await Promise.all([
+          getDocs(collection(db, 'carbonFootprints')).catch(() => ({ docs: [] })),
+          getDocs(collection(db, 'foodCarbon')).catch(() => ({ docs: [] })),
+          getDocs(collection(db, 'recycling')).catch(() => ({ docs: [] })),
+          getDocs(collection(db, 'showerTimers')).catch(() => ({ docs: [] }))
+        ]);
+        
+        let totalScore = 0;
+        let submissionsCount = 0;
+        let bestScore = 0;
+        let lastSubmission: Date | null = null;
+        
+        // Calculate stats from all submissions
+        [...carbonFootprints.docs, ...foodCarbon.docs, ...recycling.docs, ...showerTimers.docs]
+          .filter(doc => doc.data().userId === userId)
+          .forEach(doc => {
+            const submissionData = doc.data();
+            totalScore += submissionData.score || 0;
+            submissionsCount += 1;
+            if (submissionData.score > bestScore) {
+              bestScore = submissionData.score;
+            }
+            if (submissionData.createdAt && (!lastSubmission || submissionData.createdAt.toDate() > lastSubmission)) {
+              lastSubmission = submissionData.createdAt.toDate();
+            }
+          });
+        
+        const averageScore = submissionsCount > 0 ? totalScore / submissionsCount : 0;
+        const level = Math.floor(totalScore / 100) + 1;
+        const levelProgress = totalScore % 100;
+        
         setUserProfile({
           id: userDoc.id,
           displayName: data.displayName,
           email: data.email,
           crewId: data.crewId,
-          totalScore: data.totalScore || 0,
-          level: data.level || 1,
-          levelProgress: data.levelProgress || 0,
+          totalScore,
+          level,
+          levelProgress,
           achievements: data.achievements || [],
           avatarUrl: data.avatarUrl,
           isCrewManager: data.isCrewManager || false,
-          submissionsCount: data.submissionsCount || 0,
-          averageScore: data.averageScore || 0,
-          bestScore: data.bestScore || 0,
-          lastSubmission: data.lastSubmission?.toDate() || null,
+          submissionsCount,
+          averageScore,
+          bestScore,
+          lastSubmission,
           createdAt: data.createdAt?.toDate() || new Date()
         });
+        
+        // Update the user document with recalculated stats to keep everything in sync
+        await updateDoc(doc(db, 'users', userId), {
+          totalScore,
+          level,
+          levelProgress,
+          submissionsCount,
+          averageScore,
+          bestScore,
+          lastSubmission
+        });
+      } else {
+        // User document doesn't exist, create it
+        console.log('User document does not exist, creating new profile...');
+        const newUserProfile: UserProfile = {
+          id: userId,
+          displayName: currentUser?.displayName || 'Demo User',
+          email: currentUser?.email || '',
+          crewId: '',
+          totalScore: 0,
+          level: 1,
+          levelProgress: 0,
+          achievements: [],
+          avatarUrl: '',
+          isCrewManager: false,
+          submissionsCount: 0,
+          averageScore: 0,
+          bestScore: 0,
+          lastSubmission: null,
+          createdAt: new Date()
+        };
+        
+        await setDoc(doc(db, 'users', userId), newUserProfile);
+        setUserProfile(newUserProfile);
+        console.log('New user profile created successfully');
       }
     } catch (err) {
       console.error('Error fetching user profile:', err);
-      setError('Failed to fetch user profile');
     }
-  }, []);
+  }, [currentUser]);
 
   const fetchUserCrew = useCallback(async (userId: string) => {
     try {
@@ -292,33 +323,109 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const refreshData = useCallback(async () => {
-    if (!currentUser) return;
-    
-    setIsLoading(true);
-    setError(null);
+    console.log('=== REFRESH DATA START ===');
+    console.log('Current user:', currentUser?.uid);
+    console.log('Current user profile:', userProfile);
     
     try {
-      await Promise.all([
-        fetchUserProfile(currentUser.uid),
-        fetchUserCrew(currentUser.uid),
-        fetchLeaderboard()
-      ]);
+      setIsLoading(true);
+      setError(null);
+      
+      console.log('Fetching leaderboard...');
+      await fetchLeaderboard();
+      console.log('Leaderboard fetched successfully');
+      
+      console.log('Fetching user profile...');
+      if (currentUser) {
+        await fetchUserProfile(currentUser.uid);
+        console.log('User profile fetched successfully');
+      }
+      
+      console.log('Fetching user crew...');
+      if (currentUser) {
+        await fetchUserCrew(currentUser.uid);
+        console.log('User crew fetched successfully');
+      }
+      
+      console.log('=== REFRESH DATA COMPLETE ===');
     } catch (err) {
       console.error('Error refreshing data:', err);
       setError('Failed to refresh data');
     } finally {
       setIsLoading(false);
     }
-  }, [currentUser, fetchUserProfile, fetchUserCrew, fetchLeaderboard]);
+  }, [currentUser, fetchLeaderboard, fetchUserProfile, fetchUserCrew]);
 
   const submitCarbonFootprint = async (submission: CarbonFootprintSubmission) => {
     try {
-      const submissionRef = doc(collection(db, 'carbonFootprints'));
-      await setDoc(submissionRef, {
-        ...submission,
-        createdAt: Timestamp.now()
+      console.log('=== SUBMIT CARBON FOOTPRINT START ===');
+      console.log('Original submission:', submission);
+      console.log('Current user:', currentUser);
+      console.log('User profile:', userProfile);
+      console.log('User crew:', userCrew);
+      
+      const displayName = currentUser?.displayName || userProfile?.displayName || 'Unknown User';
+      const userId = currentUser?.uid || '';
+      const crewId = userCrew?.id || submission.crewId || '';
+      const crewName = userCrew?.name || (submission as any).crewName || '';
+      
+      console.log('Processed values:', {
+        displayName,
+        userId,
+        crewId,
+        crewName
       });
+      
+      if (!userId) {
+        console.error('ERROR: No userId available');
+        throw new Error('User not authenticated');
+      }
+      
+      const finalSubmission = {
+        ...submission,
+        userId,
+        displayName,
+        crewId,
+        crewName,
+        createdAt: Timestamp.now()
+      };
+      
+      console.log('Final submission to be saved:', finalSubmission);
+      
+      const submissionRef = doc(collection(db, 'carbonFootprints'));
+      await setDoc(submissionRef, finalSubmission);
+      console.log('Submission saved successfully');
+      
+      // Update user profile with new score and submission count
+      if (currentUser) {
+        console.log('Updating user profile...');
+        const userRef = doc(db, 'users', currentUser.uid);
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const newTotalScore = (userData.totalScore || 0) + (submission.score || 0);
+          const newSubmissionsCount = (userData.submissionsCount || 0) + 1;
+          
+          console.log('User profile update:', {
+            oldTotalScore: userData.totalScore,
+            newTotalScore,
+            oldSubmissionsCount: userData.submissionsCount,
+            newSubmissionsCount
+          });
+          
+          await updateDoc(userRef, {
+            totalScore: newTotalScore,
+            submissionsCount: newSubmissionsCount,
+            lastSubmission: Timestamp.now()
+          });
+          console.log('User profile updated successfully');
+        }
+      }
+      
+      console.log('Refreshing data...');
       await refreshData();
+      await refreshCrewData();
+      console.log('=== SUBMIT CARBON FOOTPRINT COMPLETE ===');
     } catch (err) {
       console.error('Error submitting carbon footprint:', err);
       throw new Error('Failed to submit carbon footprint');
@@ -327,12 +434,54 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const submitFoodCarbon = async (submission: FoodCarbonSubmission) => {
     try {
+      console.log('Submitting food carbon:', submission);
+      console.log('Current user display name:', currentUser?.displayName);
+      console.log('User profile display name:', userProfile?.displayName);
+      
+      const displayName = currentUser?.displayName || userProfile?.displayName || 'Unknown User';
+      const userId = currentUser?.uid || '';
+      console.log('Using display name:', displayName);
+      console.log('Using userId:', userId);
+      
+      if (!userId) {
+        console.error('ERROR: No userId available');
+        throw new Error('User not authenticated');
+      }
+      
       const submissionRef = doc(collection(db, 'foodCarbon'));
       await setDoc(submissionRef, {
         ...submission,
+        userId,
+        displayName,
+        crewId: userCrew?.id || submission.crewId || '',
+        crewName: userCrew?.name || (submission as any).crewName || '',
         createdAt: Timestamp.now()
       });
+      
+      console.log('Food carbon submission saved successfully');
+      
+      // Update user profile with new score and submission count
+      if (currentUser) {
+        const userRef = doc(db, 'users', currentUser.uid);
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const newTotalScore = (userData.totalScore || 0) + submission.score;
+          const newSubmissionsCount = (userData.submissionsCount || 0) + 1;
+          
+          await updateDoc(userRef, {
+            totalScore: newTotalScore,
+            submissionsCount: newSubmissionsCount,
+            lastSubmission: Timestamp.now()
+          });
+          console.log('User profile updated with new score:', newTotalScore);
+        }
+      }
+      
+      console.log('Refreshing data after food carbon submission...');
       await refreshData();
+      await refreshCrewData();
+      console.log('Data refresh completed');
     } catch (err) {
       console.error('Error submitting food carbon:', err);
       throw new Error('Failed to submit food carbon');
@@ -341,12 +490,54 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const submitRecycling = async (submission: RecyclingSubmission) => {
     try {
+      console.log('Submitting recycling:', submission);
+      console.log('Current user display name:', currentUser?.displayName);
+      console.log('User profile display name:', userProfile?.displayName);
+      
+      const displayName = currentUser?.displayName || userProfile?.displayName || 'Unknown User';
+      const userId = currentUser?.uid || '';
+      console.log('Using display name:', displayName);
+      console.log('Using userId:', userId);
+      
+      if (!userId) {
+        console.error('ERROR: No userId available');
+        throw new Error('User not authenticated');
+      }
+      
       const submissionRef = doc(collection(db, 'recycling'));
       await setDoc(submissionRef, {
         ...submission,
+        userId,
+        displayName,
+        crewId: userCrew?.id || submission.crewId || '',
+        crewName: userCrew?.name || (submission as any).crewName || '',
         createdAt: Timestamp.now()
       });
+      
+      console.log('Recycling submission saved successfully');
+      
+      // Update user profile with new score and submission count
+      if (currentUser) {
+        const userRef = doc(db, 'users', currentUser.uid);
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const newTotalScore = (userData.totalScore || 0) + submission.score;
+          const newSubmissionsCount = (userData.submissionsCount || 0) + 1;
+          
+          await updateDoc(userRef, {
+            totalScore: newTotalScore,
+            submissionsCount: newSubmissionsCount,
+            lastSubmission: Timestamp.now()
+          });
+          console.log('User profile updated with new score:', newTotalScore);
+        }
+      }
+      
+      console.log('Refreshing data after recycling submission...');
       await refreshData();
+      await refreshCrewData();
+      console.log('Data refresh completed');
     } catch (err) {
       console.error('Error submitting recycling:', err);
       throw new Error('Failed to submit recycling');
@@ -355,12 +546,54 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const submitShowerTimer = async (submission: ShowerTimerSubmission) => {
     try {
+      console.log('Submitting shower timer:', submission);
+      console.log('Current user display name:', currentUser?.displayName);
+      console.log('User profile display name:', userProfile?.displayName);
+      
+      const displayName = currentUser?.displayName || userProfile?.displayName || 'Unknown User';
+      const userId = currentUser?.uid || '';
+      console.log('Using display name:', displayName);
+      console.log('Using userId:', userId);
+      
+      if (!userId) {
+        console.error('ERROR: No userId available');
+        throw new Error('User not authenticated');
+      }
+      
       const submissionRef = doc(collection(db, 'showerTimers'));
       await setDoc(submissionRef, {
         ...submission,
+        userId,
+        displayName,
+        crewId: userCrew?.id || submission.crewId || '',
+        crewName: userCrew?.name || (submission as any).crewName || '',
         createdAt: Timestamp.now()
       });
+      
+      console.log('Shower timer submission saved successfully');
+      
+      // Update user profile with new score and submission count
+      if (currentUser) {
+        const userRef = doc(db, 'users', currentUser.uid);
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const newTotalScore = (userData.totalScore || 0) + submission.score;
+          const newSubmissionsCount = (userData.submissionsCount || 0) + 1;
+          
+          await updateDoc(userRef, {
+            totalScore: newTotalScore,
+            submissionsCount: newSubmissionsCount,
+            lastSubmission: Timestamp.now()
+          });
+          console.log('User profile updated with new score:', newTotalScore);
+        }
+      }
+      
+      console.log('Refreshing data after shower timer submission...');
       await refreshData();
+      await refreshCrewData();
+      console.log('Data refresh completed');
     } catch (err) {
       console.error('Error submitting shower timer:', err);
       throw new Error('Failed to submit shower timer');
@@ -439,7 +672,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const createSampleLeaderboardData = useCallback(async () => {
-    if (!currentUser) return;
+    console.log('createSampleLeaderboardData called');
+    console.log('currentUser:', currentUser);
+    
+    if (!currentUser) {
+      console.log('No current user, cannot create sample data');
+      return;
+    }
     
     try {
       console.log('Creating sample leaderboard data...');
@@ -459,10 +698,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         score: 150
       };
       
+      console.log('Creating carbon footprint submission:', carbonSubmission);
       await setDoc(doc(collection(db, 'carbonFootprints')), {
         ...carbonSubmission,
         createdAt: Timestamp.now()
       });
+      console.log('Carbon footprint submission created');
       
       // Create sample food carbon submission
       const foodSubmission = {
@@ -479,17 +720,456 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         score: 100
       };
       
+      console.log('Creating food carbon submission:', foodSubmission);
       await setDoc(doc(collection(db, 'foodCarbon')), {
         ...foodSubmission,
         createdAt: Timestamp.now()
       });
+      console.log('Food carbon submission created');
+      
+      // Create sample recycling submission
+      const recyclingSubmission = {
+        userId: currentUser.uid,
+        displayName: currentUser.displayName || 'Test User',
+        challengeId: 'sample-recycling-challenge',
+        crewId: 'sample-crew',
+        crewName: 'Sample Crew',
+        date: new Date(),
+        category: 'plastic, paper',
+        quantity: 15,
+        score: 75
+      };
+      
+      console.log('Creating recycling submission:', recyclingSubmission);
+      await setDoc(doc(collection(db, 'recycling')), {
+        ...recyclingSubmission,
+        createdAt: Timestamp.now()
+      });
+      console.log('Recycling submission created');
+      
+      // Create sample shower timer submission
+      const showerSubmission = {
+        userId: currentUser.uid,
+        displayName: currentUser.displayName || 'Test User',
+        challengeId: 'sample-shower-challenge',
+        crewId: 'sample-crew',
+        crewName: 'Sample Crew',
+        date: new Date(),
+        duration: 5,
+        score: 25
+      };
+      
+      console.log('Creating shower timer submission:', showerSubmission);
+      await setDoc(doc(collection(db, 'showerTimers')), {
+        ...showerSubmission,
+        createdAt: Timestamp.now()
+      });
+      console.log('Shower timer submission created');
       
       console.log('Sample data created successfully');
+      console.log('Refreshing data...');
       await refreshData(); // Refresh to show the new data
+      console.log('Data refresh completed');
     } catch (err) {
       console.error('Error creating sample data:', err);
     }
   }, [currentUser, refreshData]);
+
+  const testSubmission = useCallback(async () => {
+    console.log('testSubmission called');
+    console.log('currentUser:', currentUser);
+    console.log('userProfile:', userProfile);
+    
+    if (!currentUser) {
+      console.log('No current user, cannot create test submission');
+      return;
+    }
+    
+    try {
+      console.log('Creating test submission...');
+      
+      const testSubmissionData = {
+        userId: currentUser.uid,
+        displayName: currentUser.displayName || userProfile?.displayName || 'Test User',
+        challengeId: 'test-challenge',
+        crewId: userCrew?.id || 'test-crew',
+        crewName: userCrew?.name || 'Test Crew',
+        date: new Date(),
+        startLocation: 'Test Start',
+        endLocation: 'Test End',
+        distance: 5,
+        transportType: 'public' as const,
+        score: 200
+      };
+      
+      console.log('Creating test submission with data:', testSubmissionData);
+      await setDoc(doc(collection(db, 'carbonFootprints')), {
+        ...testSubmissionData,
+        createdAt: Timestamp.now()
+      });
+      console.log('Test submission created successfully');
+      
+      console.log('Refreshing data...');
+      await refreshData();
+      console.log('Data refresh completed');
+    } catch (err) {
+      console.error('Error creating test submission:', err);
+    }
+  }, [currentUser, userProfile, userCrew, refreshData]);
+
+  const refreshCrewData = useCallback(async () => {
+    if (!userCrew || !currentUser) return;
+    
+    try {
+      // Refresh crew members and performance data
+      const [carbonFootprints, foodCarbon, recycling, showerTimers] = await Promise.all([
+        getDocs(collection(db, 'carbonFootprints')).catch(() => ({ docs: [] })),
+        getDocs(collection(db, 'foodCarbon')).catch(() => ({ docs: [] })),
+        getDocs(collection(db, 'recycling')).catch(() => ({ docs: [] })),
+        getDocs(collection(db, 'showerTimers')).catch(() => ({ docs: [] }))
+      ]);
+      
+      // Update crew total score
+      let crewTotalScore = 0;
+      const crewMemberIds = new Set(userCrew.members);
+      
+      // Calculate total score for all crew members
+      [...carbonFootprints.docs, ...foodCarbon.docs, ...recycling.docs, ...showerTimers.docs].forEach(doc => {
+        const submission = doc.data();
+        if (crewMemberIds.has(submission.userId)) {
+          crewTotalScore += submission.score || 0;
+        }
+      });
+      
+      // Update crew document with new total score
+      await updateDoc(doc(db, 'crews', userCrew.id), {
+        totalScore: crewTotalScore,
+        updatedAt: Timestamp.now()
+      });
+      
+      // Refresh the crew data
+      await refreshData();
+    } catch (err) {
+      console.error('Error refreshing crew data:', err);
+    }
+  }, [userCrew, currentUser, refreshData]);
+
+  const comprehensiveTest = useCallback(async () => {
+    console.log('=== COMPREHENSIVE TEST START ===');
+    console.log('Current user:', currentUser);
+    console.log('User profile:', userProfile);
+    
+    if (!currentUser) {
+      console.log('ERROR: No current user found');
+      return;
+    }
+    
+    try {
+      // Step 1: Create a test submission
+      console.log('Step 1: Creating test submission...');
+      const testSubmissionData = {
+        userId: currentUser.uid,
+        displayName: currentUser.displayName || userProfile?.displayName || 'Test User',
+        challengeId: 'comprehensive-test',
+        crewId: userCrew?.id || 'test-crew',
+        crewName: userCrew?.name || 'Test Crew',
+        date: new Date(),
+        startLocation: 'Test Start',
+        endLocation: 'Test End',
+        distance: 10,
+        transportType: 'car' as const,
+        score: 300
+      };
+      
+      console.log('Test submission data:', testSubmissionData);
+      
+      // Create the submission
+      const submissionRef = doc(collection(db, 'carbonFootprints'));
+      await setDoc(submissionRef, {
+        ...testSubmissionData,
+        createdAt: Timestamp.now()
+      });
+      console.log('Test submission created successfully');
+      
+      // Step 2: Wait a moment for Firestore to update
+      console.log('Step 2: Waiting for Firestore to update...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Step 3: Manually fetch the submission to verify it exists
+      console.log('Step 3: Verifying submission exists...');
+      const submissionsSnapshot = await getDocs(collection(db, 'carbonFootprints'));
+      const submissions = submissionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+      const ourSubmission = submissions.find((sub: any) => sub.userId === currentUser.uid && sub.challengeId === 'comprehensive-test');
+      console.log('Found our submission:', ourSubmission);
+      
+      // Step 4: Refresh leaderboard data
+      console.log('Step 4: Refreshing leaderboard...');
+      await fetchLeaderboard();
+      
+      // Step 5: Check if our submission appears in the leaderboard
+      console.log('Step 5: Checking leaderboard for our submission...');
+      console.log('Current leaderboard:', leaderboard);
+      const ourLeaderboardEntry = leaderboard.find(entry => entry.userId === currentUser.uid);
+      console.log('Our leaderboard entry:', ourLeaderboardEntry);
+      
+      // Step 6: Update user profile
+      console.log('Step 6: Updating user profile...');
+      if (userProfile) {
+        const userRef = doc(db, 'users', currentUser.uid);
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const newTotalScore = (userData.totalScore || 0) + 300;
+          const newSubmissionsCount = (userData.submissionsCount || 0) + 1;
+          
+          await updateDoc(userRef, {
+            totalScore: newTotalScore,
+            submissionsCount: newSubmissionsCount,
+            lastSubmission: Timestamp.now()
+          });
+          console.log('User profile updated');
+        }
+      }
+      
+      console.log('=== COMPREHENSIVE TEST COMPLETE ===');
+      
+    } catch (err) {
+      console.error('Error in comprehensive test:', err);
+    }
+  }, [currentUser, userProfile, userCrew, fetchLeaderboard, leaderboard]);
+
+  const authTest = useCallback(async () => {
+    console.log('=== AUTHENTICATION TEST ===');
+    console.log('Current user:', currentUser);
+    console.log('User profile:', userProfile);
+    console.log('User crew:', userCrew);
+    console.log('Is user authenticated:', !!currentUser);
+    console.log('User ID:', currentUser?.uid);
+    console.log('User display name:', currentUser?.displayName);
+    console.log('User email:', currentUser?.email);
+    
+    if (currentUser) {
+      try {
+        // Test Firestore access
+        const userRef = doc(db, 'users', currentUser.uid);
+        const userDoc = await getDoc(userRef);
+        console.log('User document exists:', userDoc.exists());
+        if (userDoc.exists()) {
+          console.log('User document data:', userDoc.data());
+        }
+        
+        // Test collection access
+        const submissionsSnapshot = await getDocs(collection(db, 'carbonFootprints'));
+        console.log('Carbon footprints collection accessible, count:', submissionsSnapshot.docs.length);
+        
+      } catch (err) {
+        console.error('Error testing Firestore access:', err);
+      }
+    } else {
+      console.log('ERROR: No authenticated user found');
+    }
+    console.log('=== AUTHENTICATION TEST COMPLETE ===');
+  }, [currentUser, userProfile, userCrew]);
+
+  const backendTest = useCallback(async () => {
+    console.log('=== BACKEND CONNECTIVITY TEST ===');
+    
+    if (!currentUser) {
+      console.log('ERROR: No authenticated user');
+      return;
+    }
+    
+    try {
+      // Test 1: Write to users collection
+      console.log('Test 1: Writing to users collection...');
+      const userRef = doc(db, 'users', currentUser.uid);
+      const userDoc = await getDoc(userRef);
+      
+      if (userDoc.exists()) {
+        // User exists, update it
+        const testData = {
+          testField: 'test-value',
+          testTimestamp: Timestamp.now()
+        };
+        await updateDoc(userRef, testData);
+        console.log('✓ Successfully updated users collection');
+      } else {
+        // User doesn't exist, create it
+        const newUserProfile = {
+          id: currentUser.uid,
+          displayName: currentUser.displayName || 'Demo User',
+          email: currentUser.email || '',
+          crewId: '',
+          totalScore: 0,
+          level: 1,
+          levelProgress: 0,
+          achievements: [],
+          avatarUrl: '',
+          isCrewManager: false,
+          submissionsCount: 0,
+          averageScore: 0,
+          bestScore: 0,
+          lastSubmission: null,
+          createdAt: new Date(),
+          testField: 'test-value',
+          testTimestamp: Timestamp.now()
+        };
+        await setDoc(userRef, newUserProfile);
+        console.log('✓ Successfully created user document');
+      }
+      
+      // Test 2: Reading from users collection...');
+      const userDocRead = await getDoc(userRef);
+      if (userDocRead.exists()) {
+        console.log('✓ Successfully read from users collection');
+        console.log('User data:', userDocRead.data());
+      } else {
+        console.log('✗ User document does not exist');
+      }
+      
+      // Test 3: Write to carbonFootprints collection
+      console.log('Test 3: Writing to carbonFootprints collection...');
+      const testSubmissionRef = doc(collection(db, 'carbonFootprints'));
+      const testSubmission = {
+        userId: currentUser.uid,
+        displayName: currentUser.displayName || 'Test User',
+        challengeId: 'backend-test',
+        crewId: 'test-crew',
+        crewName: 'Test Crew',
+        date: new Date(),
+        startLocation: 'Test Start',
+        endLocation: 'Test End',
+        distance: 5,
+        transportType: 'car',
+        score: 100,
+        createdAt: Timestamp.now()
+      };
+      await setDoc(testSubmissionRef, testSubmission);
+      console.log('✓ Successfully wrote to carbonFootprints collection');
+      
+      // Test 4: Read from carbonFootprints collection
+      console.log('Test 4: Reading from carbonFootprints collection...');
+      const submissionsSnapshot = await getDocs(collection(db, 'carbonFootprints'));
+      console.log(`✓ Successfully read from carbonFootprints collection. Found ${submissionsSnapshot.docs.length} documents`);
+      
+      // Test 5: Read from all submission collections
+      console.log('Test 5: Reading from all submission collections...');
+      const [carbonFootprints, foodCarbon, recycling, showerTimers] = await Promise.all([
+        getDocs(collection(db, 'carbonFootprints')),
+        getDocs(collection(db, 'foodCarbon')),
+        getDocs(collection(db, 'recycling')),
+        getDocs(collection(db, 'showerTimers'))
+      ]);
+      
+      console.log('Collection counts:', {
+        carbonFootprints: carbonFootprints.docs.length,
+        foodCarbon: foodCarbon.docs.length,
+        recycling: recycling.docs.length,
+        showerTimers: showerTimers.docs.length
+      });
+      
+      // Test 6: Test leaderboard aggregation
+      console.log('Test 6: Testing leaderboard aggregation...');
+      const userScores = new Map<string, { userId: string; score: number; displayName: string; crewName: string; achievements: string[] }>();
+      
+      carbonFootprints.docs.forEach(doc => {
+        const data = doc.data();
+        const userId = data.userId;
+        if (userId) {
+          const existing = userScores.get(userId) || { userId, score: 0, displayName: data.displayName || 'Unknown User', crewName: data.crewName || '', achievements: [] };
+          existing.score += data.score || 0;
+          existing.displayName = data.displayName || existing.displayName;
+          existing.crewName = data.crewName || existing.crewName;
+          userScores.set(userId, existing);
+        }
+      });
+      
+      console.log('User scores calculated:', userScores.size, 'users');
+      console.log('User scores:', Array.from(userScores.entries()));
+      
+      // Clean up test data
+      console.log('Cleaning up test data...');
+      await updateDoc(userRef, { testField: null, testTimestamp: null });
+      console.log('✓ Test data cleaned up');
+      
+      console.log('=== BACKEND CONNECTIVITY TEST COMPLETE ===');
+      
+    } catch (err) {
+      console.error('Backend connectivity test failed:', err);
+      console.error('Error details:', {
+        code: (err as any).code,
+        message: (err as any).message,
+        stack: (err as any).stack
+      });
+    }
+  }, [currentUser]);
+
+  const firebaseConnectionTest = useCallback(async () => {
+    console.log('=== FIREBASE CONNECTION TEST ===');
+    console.log('Firebase config:', {
+      projectId: 'ecorank-22728',
+      authDomain: 'ecorank-22728.firebaseapp.com',
+      apiKey: 'AIzaSyBl-Z5esXLPqgTl98SkDcwlYPA4-MS35ns'
+    });
+    
+    try {
+      // Test 1: Check if we can access Firestore
+      console.log('Test 1: Testing Firestore connection...');
+      const testRef = doc(db, 'test', 'connection-test');
+      await setDoc(testRef, {
+        timestamp: Timestamp.now(),
+        message: 'Connection test successful'
+      });
+      console.log('✓ Successfully wrote to Firestore');
+      
+      // Test 2: Read the test document
+      console.log('Test 2: Reading test document...');
+      const testDoc = await getDoc(testRef);
+      if (testDoc.exists()) {
+        console.log('✓ Successfully read from Firestore');
+        console.log('Test document data:', testDoc.data());
+      }
+      
+      // Test 3: Clean up test document
+      console.log('Test 3: Cleaning up test document...');
+      await setDoc(testRef, {});
+      console.log('✓ Test document cleaned up');
+      
+      // Test 4: Check if we can access the users collection
+      console.log('Test 4: Testing users collection access...');
+      if (currentUser) {
+        const userRef = doc(db, 'users', currentUser.uid);
+        const userDoc = await getDoc(userRef);
+        console.log('✓ Users collection accessible');
+        console.log('User document exists:', userDoc.exists());
+      } else {
+        console.log('⚠ No current user for users collection test');
+      }
+      
+      // Test 5: Check if we can access submission collections
+      console.log('Test 5: Testing submission collections access...');
+      const collections = ['carbonFootprints', 'foodCarbon', 'recycling', 'showerTimers'];
+      
+      for (const collectionName of collections) {
+        try {
+          const snapshot = await getDocs(collection(db, collectionName));
+          console.log(`✓ ${collectionName} collection accessible (${snapshot.docs.length} documents)`);
+        } catch (err) {
+          console.error(`✗ ${collectionName} collection not accessible:`, err);
+        }
+      }
+      
+      console.log('=== FIREBASE CONNECTION TEST COMPLETE ===');
+      
+    } catch (err) {
+      console.error('Firebase connection test failed:', err);
+      console.error('Error details:', {
+        code: (err as any).code,
+        message: (err as any).message,
+        stack: (err as any).stack
+      });
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     refreshData();
@@ -723,7 +1403,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     clearVehicle: () => {
       setSelectedVehicle(null);
     },
-    createSampleLeaderboardData
+    createSampleLeaderboardData,
+    testSubmission,
+    refreshCrewData,
+    comprehensiveTest,
+    authTest,
+    backendTest,
+    firebaseConnectionTest
   };
 
   return (

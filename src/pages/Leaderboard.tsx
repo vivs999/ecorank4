@@ -4,13 +4,9 @@ import Leaderboard from '../components/Leaderboard';
 import { LeaderboardEntry } from '../types';
 
 const LeaderboardPage: React.FC = () => {
-  const { leaderboard, isLoading, error, refreshData } = useApp();
+  const { leaderboard, isLoading, error, createSampleLeaderboardData } = useApp();
   const [activeTab, setActiveTab] = useState<'current' | 'overall'>('current');
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
-
-  useEffect(() => {
-    refreshData();
-  }, [refreshData]);
 
   useEffect(() => {
     if (leaderboard) {
@@ -28,21 +24,23 @@ const LeaderboardPage: React.FC = () => {
         <div className="col-12 col-lg-10">
           <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
             <h1 className="h2 mb-3 mb-md-0">Leaderboard</h1>
-            <div className="btn-group w-100 w-md-auto" role="group">
-              <button
-                type="button"
-                className={`btn ${activeTab === 'current' ? 'btn-success' : 'btn-outline-success'}`}
-                onClick={() => handleTabChange('current')}
-              >
-                Current Challenge
-              </button>
-              <button
-                type="button"
-                className={`btn ${activeTab === 'overall' ? 'btn-success' : 'btn-outline-success'}`}
-                onClick={() => handleTabChange('overall')}
-              >
-                Overall Rankings
-              </button>
+            <div className="d-flex gap-2">
+              <div className="btn-group w-100 w-md-auto" role="group">
+                <button
+                  type="button"
+                  className={`btn ${activeTab === 'current' ? 'btn-success' : 'btn-outline-success'}`}
+                  onClick={() => handleTabChange('current')}
+                >
+                  Current Challenge
+                </button>
+                <button
+                  type="button"
+                  className={`btn ${activeTab === 'overall' ? 'btn-success' : 'btn-outline-success'}`}
+                  onClick={() => handleTabChange('overall')}
+                >
+                  Overall Rankings
+                </button>
+              </div>
             </div>
           </div>
 
@@ -53,6 +51,7 @@ const LeaderboardPage: React.FC = () => {
             error={error}
             showCrew={true}
             showAchievements={true}
+            onCreateSampleData={createSampleLeaderboardData}
           />
         </div>
       </div>

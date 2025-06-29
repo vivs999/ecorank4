@@ -11,6 +11,7 @@ interface LeaderboardProps {
   error: string | null;
   showCrew?: boolean;
   showAchievements?: boolean;
+  onCreateSampleData?: () => void;
 }
 
 const Leaderboard: React.FC<LeaderboardProps> = ({
@@ -20,6 +21,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   error,
   showCrew = false,
   showAchievements = false,
+  onCreateSampleData,
 }) => {
   const [sortBy, setSortBy] = useState<'position' | 'score'>('position');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -107,20 +109,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           <div className="text-muted">
             <h5>No leaderboard entries yet</h5>
             <p className="mb-4">Start submitting challenges to see your ranking on the leaderboard!</p>
-            <div className="d-flex justify-content-center gap-3">
-              <button 
-                className="btn btn-outline-success"
-                onClick={() => window.location.href = '/challenges/carbon-footprint'}
-              >
-                Try Carbon Footprint Challenge
-              </button>
-              <button 
-                className="btn btn-outline-success"
-                onClick={() => window.location.href = '/challenges/food-carbon'}
-              >
-                Try Food Carbon Challenge
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -132,7 +120,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       <div className="card-header bg-success text-white">
         <h4 className="mb-0">{title}</h4>
       </div>
-      
       <div className="card-body">
         <div className="mb-3">
           <div className="input-group">
