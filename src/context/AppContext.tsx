@@ -92,10 +92,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // Process carbon footprint submissions
       carbonFootprints.docs.forEach(doc => {
         const data = doc.data();
-        console.log('Carbon footprint submission:', data);
         const userId = data.userId;
         if (userId) {
-          const existing = userScores.get(userId) || { userId, score: 0, displayName: data.displayName || 'Unknown User', crewName: data.crewName || '', achievements: [] };
+          const existing = userScores.get(userId) || { userId, score: 0, displayName: data.displayName || 'Unknown User', crewName: '', achievements: [] };
           existing.score += data.score || 0;
           existing.displayName = data.displayName || existing.displayName;
           existing.crewName = data.crewName || existing.crewName;
@@ -106,10 +105,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // Process food carbon submissions
       foodCarbon.docs.forEach(doc => {
         const data = doc.data();
-        console.log('Food carbon submission:', data);
         const userId = data.userId;
         if (userId) {
-          const existing = userScores.get(userId) || { userId, score: 0, displayName: data.displayName || 'Unknown User', crewName: data.crewName || '', achievements: [] };
+          const existing = userScores.get(userId) || { userId, score: 0, displayName: data.displayName || 'Unknown User', crewName: '', achievements: [] };
           existing.score += data.score || 0;
           existing.displayName = data.displayName || existing.displayName;
           existing.crewName = data.crewName || existing.crewName;
@@ -120,10 +118,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // Process recycling submissions
       recycling.docs.forEach(doc => {
         const data = doc.data();
-        console.log('Recycling submission:', data);
         const userId = data.userId;
         if (userId) {
-          const existing = userScores.get(userId) || { userId, score: 0, displayName: data.displayName || 'Unknown User', crewName: data.crewName || '', achievements: [] };
+          const existing = userScores.get(userId) || { userId, score: 0, displayName: data.displayName || 'Unknown User', crewName: '', achievements: [] };
           existing.score += data.score || 0;
           existing.displayName = data.displayName || existing.displayName;
           existing.crewName = data.crewName || existing.crewName;
@@ -134,10 +131,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // Process shower timer submissions
       showerTimers.docs.forEach(doc => {
         const data = doc.data();
-        console.log('Shower timer submission:', data);
         const userId = data.userId;
         if (userId) {
-          const existing = userScores.get(userId) || { userId, score: 0, displayName: data.displayName || 'Unknown User', crewName: data.crewName || '', achievements: [] };
+          const existing = userScores.get(userId) || { userId, score: 0, displayName: data.displayName || 'Unknown User', crewName: '', achievements: [] };
           existing.score += data.score || 0;
           existing.displayName = data.displayName || existing.displayName;
           existing.crewName = data.crewName || existing.crewName;
@@ -342,12 +338,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         throw new Error('User not authenticated');
       }
 
+      // Get crew name if user is in a crew
+      let crewName = '';
+      if (userProfile?.crewId) {
+        try {
+          const crewDoc = await getDoc(doc(db, 'crews', userProfile.crewId));
+          if (crewDoc.exists()) {
+            crewName = crewDoc.data().name || '';
+          }
+        } catch (err) {
+          console.error('Error fetching crew name:', err);
+        }
+      }
+
       // Add user info to submission
       const submissionWithUser = {
         ...submission,
         userId: currentUser.uid,
         displayName: currentUser.displayName || 'Unknown User',
-        crewName: userProfile?.crewId || '',
+        crewName: crewName,
         timestamp: Timestamp.now()
       };
 
@@ -447,12 +456,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         throw new Error('User not authenticated');
       }
 
+      // Get crew name if user is in a crew
+      let crewName = '';
+      if (userProfile?.crewId) {
+        try {
+          const crewDoc = await getDoc(doc(db, 'crews', userProfile.crewId));
+          if (crewDoc.exists()) {
+            crewName = crewDoc.data().name || '';
+          }
+        } catch (err) {
+          console.error('Error fetching crew name:', err);
+        }
+      }
+
       // Add user info to submission
       const submissionWithUser = {
         ...submission,
         userId: currentUser.uid,
         displayName: currentUser.displayName || 'Unknown User',
-        crewName: userProfile?.crewId || '',
+        crewName: crewName,
         timestamp: Timestamp.now()
       };
 
@@ -552,12 +574,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         throw new Error('User not authenticated');
       }
 
+      // Get crew name if user is in a crew
+      let crewName = '';
+      if (userProfile?.crewId) {
+        try {
+          const crewDoc = await getDoc(doc(db, 'crews', userProfile.crewId));
+          if (crewDoc.exists()) {
+            crewName = crewDoc.data().name || '';
+          }
+        } catch (err) {
+          console.error('Error fetching crew name:', err);
+        }
+      }
+
       // Add user info to submission
       const submissionWithUser = {
         ...submission,
         userId: currentUser.uid,
         displayName: currentUser.displayName || 'Unknown User',
-        crewName: userProfile?.crewId || '',
+        crewName: crewName,
         timestamp: Timestamp.now()
       };
 
@@ -657,12 +692,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         throw new Error('User not authenticated');
       }
 
+      // Get crew name if user is in a crew
+      let crewName = '';
+      if (userProfile?.crewId) {
+        try {
+          const crewDoc = await getDoc(doc(db, 'crews', userProfile.crewId));
+          if (crewDoc.exists()) {
+            crewName = crewDoc.data().name || '';
+          }
+        } catch (err) {
+          console.error('Error fetching crew name:', err);
+        }
+      }
+
       // Add user info to submission
       const submissionWithUser = {
         ...submission,
         userId: currentUser.uid,
         displayName: currentUser.displayName || 'Unknown User',
-        crewName: userProfile?.crewId || '',
+        crewName: crewName,
         timestamp: Timestamp.now()
       };
 
@@ -1347,10 +1395,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     refreshData,
     joinCrew: async (crewId: string) => {
       if (!currentUser) throw new Error('User must be logged in to join a crew');
+      
+      // Update crew document to add user to members
       const crewRef = doc(db, 'crews', crewId);
       await updateDoc(crewRef, {
         members: [...(await getDoc(crewRef)).data()?.members || [], currentUser.uid]
       });
+      
+      // Update user document to set crewId
+      const userRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userRef, {
+        crewId: crewId
+      });
+      
       await refreshData();
     },
     leaveCrew: async () => {
@@ -1368,6 +1425,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         members: updatedMembers
       });
       console.log('Successfully removed user from crew in Firestore'); // Debug log
+      
+      // Clear user's crewId field
+      const userRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userRef, {
+        crewId: ''
+      });
+      console.log('Successfully cleared user crewId in Firestore'); // Debug log
+      
       await refreshData();
       console.log('Data refreshed after leaving crew'); // Debug log
     },
